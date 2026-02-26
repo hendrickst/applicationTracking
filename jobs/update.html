@@ -1,0 +1,89 @@
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Job Application Entry</title>
+    <link rel="stylesheet" type="text/css" href="./resources/css/styles.css"/>
+</head>
+
+<body>
+<div class="container">
+    <h1>Add / Edit Job Application</h1>
+    <p class="sub">Fill out the job info, then keep a running log of notes.</p>
+
+    <form id="jobForm" action="./resources/xql/update.xql" method="post">
+        <div class="field">
+            <input id="record" name="record" type="hidden" value=""/>
+            <div class="error" id="recordError"/>
+        </div>
+
+        <div class="grid">
+            <div class="field">
+                <label for="companyName">Company Name</label>
+                <input id="companyName" name="companyName" type="text" value="" placeholder="e.g. American Orthodontics"/>
+                <div class="error" id="companyNameError"/>
+            </div>
+
+            <div class="field">
+                <label for="jobTitle">Job Title</label>
+                <input id="jobTitle" name="jobTitle" type="text" value="" placeholder="e.g. Data Integration Analyst"/>
+                <div class="error" id="jobTitleError"/>
+            </div>
+
+            <div class="field full">
+                <label for="url">URL</label>
+                <input id="url" name="url" type="text" value="" placeholder="https://..."/>
+                <div class="error" id="urlError"/>
+            </div>
+
+            <div class="field">
+                <label for="dateApplied">Date Applied</label>
+                <input id="dateApplied" name="dateApplied" type="date" value=""/>
+            </div>
+
+            <div class="field">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="Submitted">Unsubmitted</option>
+                    <option value="Submitted">Submitted</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Interview">Interview</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="dateRejected">Date Rejected</label>
+                <input id="dateRejected" name="dateRejected" type="date" value="" disabled="disabled"/>
+                <div class="error" id="dateRejectedError"/>
+            </div>
+
+            <div class="field">
+                <label class="spacer-label">Spacer</label>
+                <div class="error" id="dateOrderError"/>
+            </div>
+        </div>
+
+        <hr/>
+
+        <div class="notes-header">
+            <div>
+                <h2>Notes</h2>
+                <p class="sub sub-tight">Add updates like calls, interview rounds, follow-ups, etc.</p>
+            </div>
+
+            <button class="btn" type="button" id="addNoteBtn">+ Add Note</button>
+        </div>
+
+        <!-- Notes will be injected here -->
+        <div id="notesContainer"/>
+
+        <div class="footer">
+            <button class="btn" type="button" id="cancelBtn">Cancel</button>
+            <button class="btn primary" type="submit" id="saveBtn">Save</button>
+        </div>
+    </form>
+</div>
+
+<script type="text/javascript" src="./resources/js/entry.js"/>
+</body>
+</html>
