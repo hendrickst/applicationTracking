@@ -3,6 +3,8 @@ import module namespace tsh="tsh" at "./config.xql";
 import module namespace request="http://exist-db.org/xquery/request";
 
 
+    declare variable $uniqueID := util:uuid();
+    
     declare variable $record := req:parameter('record');
     declare variable $companyName := req:parameter('companyName');
     declare variable $url := req:parameter('url');
@@ -12,12 +14,12 @@ import module namespace request="http://exist-db.org/xquery/request";
     declare variable $status := req:parameter('status');
     declare variable $notes := req:parameter('notes');
     
-    declare variable $uniqueID := util:uuid();
+    
 
 declare function local:check() {
     if ($record) then
-        let $fileName := doc($tsh:working || '/' || $record || '.xml')
-        let $file := doc($tsh:working || '/' || $fileName)
+        let $fileName := $tsh:working || '/' || $record || '.xml'
+        let $file := doc($fileName)
         let $update := local:updateFile($file)
         return
             response:redirect-to(xs:anyURI('../../index.html'))
@@ -31,7 +33,7 @@ declare function local:check() {
 };
 
 declare function local:updateFile($file){
-    let $updateRecord := local:update($file, '/job/@id', $uniqueID)
+    let $updateRecord := if ($record) then local:update($file, '/job/@id', $record) else local:update($file, '/job/@id', $uniqueID)
     let $updateCompany := local:update($file, '//company', $companyName)
     let $updateUrl := local:update($file, '//url', $url)
     let $updateTitle := local:update($file, '//title', $jobTitle)

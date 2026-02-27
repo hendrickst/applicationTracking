@@ -102,26 +102,30 @@ function addNote() {
   renderNotes();
 }
 
+// ---------- Validation ----------
 function updateSaveButtonState() {
-  const enabled = companyName.value.trim() !== "" && jobTitle.value.trim() !== "";
+  const enabled =
+    companyName.value.trim() !== "" &&
+    jobTitle.value.trim() !== "";
   saveBtn.disabled = !enabled;
 }
 
-// Watch inputs
-companyName.addEventListener("input", updateSaveButtonState);
-jobTitle.addEventListener("input", updateSaveButtonState);
-
-// Initialize state on page load
-updateSaveButtonState();
-
 function highlightEmptyFields() {
-  companyName.style.borderColor = companyName.value.trim() ? "#d8d8e2" : "#b91c1c";
-  jobTitle.style.borderColor = jobTitle.value.trim() ? "#d8d8e2" : "#b91c1c";
+  companyName.style.borderColor =
+    companyName.value.trim() ? "#d8d8e2" : "#b91c1c";
+  jobTitle.style.borderColor =
+    jobTitle.value.trim() ? "#d8d8e2" : "#b91c1c";
 }
 
-companyName.addEventListener("input", highlightEmptyFields);
-jobTitle.addEventListener("input", highlightEmptyFields);
-highlightEmptyFields();
+companyName.addEventListener("input", () => {
+  updateSaveButtonState();
+  highlightEmptyFields();
+});
+
+jobTitle.addEventListener("input", () => {
+  updateSaveButtonState();
+  highlightEmptyFields();
+});
 
 // ---------- Status behavior ----------
 function syncRejectedField() {
@@ -132,8 +136,8 @@ function syncRejectedField() {
 
 status.addEventListener("change", syncRejectedField);
 
+// ---------- Cancel ----------
 cancelBtn.addEventListener("click", () => {
-  // Go back to referrer if available, otherwise fallback to index.html
   if (document.referrer) {
     window.location.href = document.referrer;
   } else {
@@ -150,12 +154,13 @@ function setRecordValue(val) {
   recordEl.value = val || "";
 }
 
-// ---------- Populate Form ----------
+// ---------- Populate Form (Updated for <job> XML) ----------
 async function populateForm() {
   const recordId = recordEl.value || "";
-  const urlFetch = recordId
-    ? `./resources/xql/populate.xql?record=${encodeURIComponent(recordId)}`
-    : "./resources/xql/populate.xql";
+  if (!recordId) return;
+
+  const urlFetch =
+    `./resources/xql/populate.xql?record=${encodeURIComponent(recordId)}`;
 
   try {
     const response = await fetch(urlFetch, { cache: "no-store" });
@@ -164,25 +169,34 @@ async function populateForm() {
     const text = await response.text();
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(text, "application/xml");
-    const recordNode = xmlDoc.querySelector("record");
 
-    if (!recordNode) {
-      setRecordValue(recordId);
-      return;
+    const job = xmlDoc.querySelector("job");
+    if (!job) return;
+
+    // ---- ID ----
+    setRecordValue(job.getAttribute("id") || recordId);
+
+    // ---- Simple fields ----
+    companyName.value =
+      job.querySelector("company")?.textContent.trim() || "";
+
+    jobTitle.value =
+      job.querySelector("title")?.textContent.trim() || "";
+
+    url.value =
+      normalizeUrl(job.querySelector("url")?.textContent || "");
+
+    // ---- Dates ----
+    const dates = job.querySelector("dates");
+    if (dates) {
+      dateApplied.value = dates.getAttribute("applied") || "";
+      dateRejected.value = dates.getAttribute("rejected") || "";
     }
 
-    const getText = (tag) => {
-      const el = recordNode.querySelector(tag);
-      return el ? el.textContent.trim() : "";
-    };
+    // ---- Status ----
+    const statusText =
+      job.querySelector("status")?.textContent.trim() || "Submitted";
 
-    if (getText("companyName")) companyName.value = getText("companyName");
-    if (getText("jobTitle")) jobTitle.value = getText("jobTitle");
-    if (getText("url")) url.value = normalizeUrl(getText("url"));
-    if (getText("dateApplied")) dateApplied.value = getText("dateApplied");
-    if (getText("dateRejected")) dateRejected.value = getText("dateRejected");
-
-    const statusText = getText("status");
     if ([...status.options].some(o => o.value === statusText)) {
       status.value = statusText;
     } else {
@@ -190,35 +204,40 @@ async function populateForm() {
     }
 
     syncRejectedField();
-    setRecordValue(getText("id") || recordId);
 
-    // Populate notes
-    const notesNodes = recordNode.querySelectorAll("notes note");
-    if (notesNodes.length) {
-      state.notes = [];
-      notesNodes.forEach((n) => {
-        state.notes.push({
-          id: uid(),
-          date: n.querySelector("date")?.textContent || "",
-          note: n.querySelector("noteText")?.textContent || ""
-        });
+    // ---- Notes ----
+    state.notes = [];
+    job.querySelectorAll("notes note").forEach(n => {
+      state.notes.push({
+        id: uid(),
+        date: n.getAttribute("date") || "",
+        note: n.textContent.trim()
       });
-      renderNotes();
-    }
+    });
+
+    renderNotes();
+    updateSaveButtonState();
+    highlightEmptyFields();
+
   } catch (err) {
     console.error("Failed to populate form:", err);
-    setRecordValue(recordEl.value);
   }
 }
 
 // ---------- Init ----------
 window.addEventListener("DOMContentLoaded", () => {
+
   const recordParam = getParam("record");
-  if (recordParam) setRecordValue(recordParam);
+  if (recordParam) {
+    setRecordValue(recordParam);
+  }
 
   addNoteBtn.addEventListener("click", addNote);
+
   renderNotes();
   syncRejectedField();
+  updateSaveButtonState();
+  highlightEmptyFields();
 
   populateForm();
 });
