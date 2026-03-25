@@ -147,6 +147,17 @@ hr {
   gap: 14px;
 }
 
+.note-grid.three-col {
+  grid-template-columns: 160px 160px 1fr; /* Nice breakdown for Date, Dropdown, and flexible Textarea */
+  gap: 14px;
+}
+
+@media (max-width: 720px) {
+  .note-grid.three-col {
+    grid-template-columns: 1fr; /* Stack vertically on mobile devices */
+  }
+}
+
 .note-actions {
   display: flex;
   justify-content: flex-end;
@@ -278,7 +289,7 @@ hr {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Automatically squeezes or wraps 5 cards */
   gap: 16px;
   margin: 20px 0 10px 0;
 }
@@ -320,4 +331,18 @@ hr {
 .report-table td:nth-child(3),
 .report-table td:nth-child(6) {
   white-space: nowrap; /* Dates */
+}
+
+.report-table td:nth-child(6) {
+  max-width: 300px;
+  word-wrap: break-word;
+  white-space: normal; /* Permits multiline text wrapping */
+  font-size: 13px;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap; /* Wraps clean on small screens! */
+  margin-top: 15px;
 }

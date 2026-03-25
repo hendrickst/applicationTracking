@@ -51,10 +51,20 @@ function renderNotes() {
     card.className = "note-card";
 
     card.innerHTML = `
-      <div class="note-grid">
+      <div class="note-grid three-col">
         <div class="field">
           <label>Date</label>
           <input type="date" name="notes[${idx}][date]" value="${n.date || ""}" />
+        </div>
+
+        <div class="field">
+          <label>Type</label>
+          <select name="notes[${idx}][type]">
+            <option value="Initial" ${n.type === 'Initial' ? 'selected' : ''}>Initial</option>
+            <option value="Interview" ${n.type === 'Interview' ? 'selected' : ''}>Interview</option>
+            <option value="Rejection" ${n.type === 'Rejection' ? 'selected' : ''}>Rejection</option>
+            <option value="Other" ${n.type === 'Other' || !n.type ? 'selected' : ''}>Other</option>
+          </select>
         </div>
 
         <div class="field">
@@ -86,6 +96,21 @@ function syncNotesFromDOM() {
     if (!noteCard) return;
 
     const dateInput = noteCard.querySelector(`input[name="notes[${idx}][date]"]`);
+    const typeInput = noteCard.querySelector(`select[name="notes[${idx}][type]"]`); // <-- Added
+    const noteInput = noteCard.querySelector(`textarea[name="notes[${idx}][note]"]`);
+    
+    if (dateInput) n.date = dateInput.value;
+    if (typeInput) n.type = typeInput.value; // <-- Added
+    if (noteInput) n.note = noteInput.value;
+  });
+}
+
+function syncNotesFromDOM() {
+  state.notes.forEach((n, idx) => {
+    const noteCard = notesContainer.children[idx];
+    if (!noteCard) return;
+
+    const dateInput = noteCard.querySelector(`input[name="notes[${idx}][date]"]`);
     const noteInput = noteCard.querySelector(`textarea[name="notes[${idx}][note]"]`);
     if (dateInput) n.date = dateInput.value;
     if (noteInput) n.note = noteInput.value;
@@ -97,6 +122,7 @@ function addNote() {
   state.notes.unshift({
     id: uid(),
     date: todayISO(),
+    type: "Other", // <-- Added default
     note: ""
   });
   renderNotes();
@@ -211,6 +237,7 @@ async function populateForm() {
       state.notes.push({
         id: uid(),
         date: n.getAttribute("date") || "",
+        type: n.getAttribute("type") || "Other", // <-- Added
         note: n.textContent.trim()
       });
     });
