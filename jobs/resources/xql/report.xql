@@ -1,53 +1,177 @@
-// ---------- Report Filter ----------
+xquery version "3.1";
 
-document.addEventListener("DOMContentLoaded", function () {
-  const statusFilter = document.getElementById("statusFilter");
-  const companyFilter = document.getElementById("companyFilter");
-  const noteTypeFilter = document.getElementById("noteTypeFilter"); // <-- Added
-  const rows = document.querySelectorAll("#reportTable tbody tr");
+declare namespace output="http://www.w3.org/2010/xslt-xquery-serialization";
 
-  if (!statusFilter || !companyFilter || !noteTypeFilter) return;
+declare option output:method "html";
+declare option output:media-type "text/html";
+declare option output:indent "yes";
 
-  // Populate company dropdown dynamically
-  const companies = new Set();
+let $apps := collection("/db/jobs/applications")/job
+let $today := current-date()
 
-  rows.forEach(row => {
-    const company = row.getAttribute("data-company");
-    if (company) companies.add(company);
-  });
+let $total := count($apps)
+let $submitted := count($apps[status = "Submitted"])
+let $interview := count($apps[status = "Interview"])
+let $rejected := count($apps[status = "Rejected"])
+let $interviewNotes := count($apps/notes/note[@type = "Interview"])
 
-  [...companies].sort().forEach(company => {
-    const option = document.createElement("option");
-    option.value = company;
-    option.textContent = company;
-    companyFilter.appendChild(option);
-  });
+return
+<html>
+<head>
+    <title>Job Applications Report</title>
+    <link rel="stylesheet" type="text/css" href="../css/styles.css"/>
+</head>
+<body>
 
-  function applyFilters() {
-    const selectedStatus = statusFilter.value;
-    const selectedCompany = companyFilter.value;
-    const selectedNoteType = noteTypeFilter.value; // <-- Added
+<div class="container">
+    <div class="back-link">
+        <a href="../../index.html">Back to Dashboard</a>
+    </div>
+    <h1>Job Applications</h1>
+    <p class="sub">Overview of all submitted positions.</p>
 
-    rows.forEach(row => {
-      const rowStatus = row.getAttribute("data-status");
-      const rowCompany = row.getAttribute("data-company");
-      const rowNoteType = row.getAttribute("data-note-type"); // <-- Added
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-number">{$total}</div>
+            <div class="summary-label">Total</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-number">{$submitted}</div>
+            <div class="summary-label">Submitted</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-number">{$interview}</div>
+            <div class="summary-label">Interview Status</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-number">{$rejected}</div>
+            <div class="summary-label">Rejected</div>
+        </div>
 
-      const statusMatch =
-        selectedStatus === "All" || rowStatus === selectedStatus;
+        <div class="summary-card">
+            <div class="summary-number" style="color: #10b981;">{$interviewNotes}</div>
+            <div class="summary-label">Interviews</div>
+        </div>
+    </div>
 
-      const companyMatch =
-        selectedCompany === "All" || rowCompany === selectedCompany;
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label for="statusFilter">Filter by Status</label>
+            <select id="statusFilter">
+                <option value="All">All</option>
+                <option value="Submitted">Submitted</option>
+                <option value="Interview">Interview</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+        </div>
+            
+        <div class="filter-group">
+            <label for="companyFilter">Filter by Company</label>
+            <select id="companyFilter">
+                <option value="All">All</option>
+            </select>
+        </div>
 
-      const noteTypeMatch =
-        selectedNoteType === "All" || rowNoteType === selectedNoteType; // <-- Added
+        <div class="filter-group">
+            <label for="noteTypeFilter">Filter by Latest Note Type</label>
+            <select id="noteTypeFilter">
+                <option value="All">All</option>
+                <option value="Initial">Initial</option>
+                <option value="Interview">Interview</option>
+                <option value="Rejection">Rejection</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
 
-      // Display row only if it matches all 3 criteria!
-      row.style.display = statusMatch && companyMatch && noteTypeMatch ? "" : "none";
-    });
-  }
+    <div class="table-wrapper">
+        <table class="report-table" id="reportTable">
+            <thead>
+                <tr>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>Date Applied</th>
+                    <th>Days Open</th>
+                    <th>Status</th>
+                    <th>Latest Note</th> <th>URL</th>
+                </tr>
+            </thead>
+            <tbody>
+            {
+                if (empty($apps)) then
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:20px;">No applications found.</td>
+                    </tr>
+                else
+                    for $job in $apps
+                    let $id := $job/@id/string()
+                    let $title := $job/title/string()
+                    let $company := $job/company/string()
+                    let $appliedStr := $job/dates/@applied/string()
+                    let $applied := try {
+                                        if ($appliedStr) then xs:date($appliedStr) else ()
+                                    } catch * {
+                                        ()
+                                    }
+                    let $days :=    if (exists($applied)) then
+                                        xs:integer(days-from-duration($today - $applied))
+                                    else
+                                        ""
+                    let $status :=  if (normalize-space($job/status/string()) != "") then
+                                        $job/status/string()
+                                    else
+                                        "Submitted"
+                    let $url := $job/url/string()
+                    
+                    (: 2. EXTRACT LATEST NOTE & TYPE :)
+                    let $latestNote := $job/notes/note[last()]
+                    let $noteType := $latestNote/@type/string()
+                    let $noteText := $latestNote/string()
+                    
+                    order by $applied descending
+                    return
+                        <tr data-status="{$status}" data-company="{$company}" data-note-type="{if ($noteType) then $noteType else 'Other'}">
+                            <td>
+                                <a class="job-link" href="../../update.html?record={$id}">
+                                    {$title}
+                                </a>
+                            </td>
+                            <td>{$company}</td>
+                            <td>{$appliedStr}</td>
+                            <td>{$days}</td>
+                            <td class="status {$status}">
+                                {$status}
+                            </td>
+                            
+                            <td>
+                                {
+                                    if ($noteType or $noteText) then
+                                        <span>
+                                            <strong>[{if ($noteType) then $noteType else "Other"}]</strong> 
+                                            {if ($noteText) then concat(" - ", $noteText) else ""}
+                                        </span>
+                                    else
+                                        "-"
+                                }
+                            </td>
+                            
+                            <td>
+                                {
+                                    if ($url) then
+                                        <a class="external-link" href="{$url}" target="_blank">View</a>
+                                    else
+                                        "-"
+                                }
+                            </td>
+                        </tr>
+            }
+            </tbody>
+        </table>
+    </div>
 
-  statusFilter.addEventListener("change", applyFilters);
-  companyFilter.addEventListener("change", applyFilters);
-  noteTypeFilter.addEventListener("change", applyFilters); // <-- Added
-});
+</div>
+
+<script type="text/javascript" src="../js/report.js"></script>
+
+</body>
+</html>
