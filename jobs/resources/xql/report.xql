@@ -13,6 +13,7 @@ let $total := count($apps)
 let $submitted := count($apps[status = "Submitted"])
 let $interview := count($apps[status = "Interview"])
 let $rejected := count($apps[status = "Rejected"])
+let $interviewNotes := count($apps/notes/note[@type = "Interview"])
 
 return
 <html>
@@ -40,11 +41,16 @@ return
         </div>
         <div class="summary-card">
             <div class="summary-number">{$interview}</div>
-            <div class="summary-label">Interview</div>
+            <div class="summary-label">Interview Status</div>
         </div>
         <div class="summary-card">
             <div class="summary-number">{$rejected}</div>
             <div class="summary-label">Rejected</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-number" style="color: #10b981;">{$interviewNotes}</div>
+            <div class="summary-label">Interviews</div>
         </div>
     </div>
 
@@ -65,6 +71,17 @@ return
                 <option value="All">All</option>
             </select>
         </div>
+
+        <div class="filter-group">
+            <label for="noteTypeFilter">Filter by Latest Note Type</label>
+            <select id="noteTypeFilter">
+                <option value="All">All</option>
+                <option value="Initial">Initial</option>
+                <option value="Interview">Interview</option>
+                <option value="Rejection">Rejection</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
     </div>
 
     <div class="table-wrapper">
@@ -76,8 +93,7 @@ return
                     <th>Date Applied</th>
                     <th>Days Open</th>
                     <th>Status</th>
-                    <th>Date Rejected</th>
-                    <th>URL</th>
+                    <th>Latest Note</th> <th>URL</th>
                 </tr>
             </thead>
             <tbody>
@@ -101,15 +117,20 @@ return
                                         xs:integer(days-from-duration($today - $applied))
                                     else
                                         ""
-                    let $rejected := $job/dates/@rejected/string()
                     let $status :=  if (normalize-space($job/status/string()) != "") then
                                         $job/status/string()
                                     else
                                         "Submitted"
                     let $url := $job/url/string()
+                    
+                    (: 2. EXTRACT LATEST NOTE & TYPE :)
+                    let $latestNote := $job/notes/note[last()]
+                    let $noteType := $latestNote/@type/string()
+                    let $noteText := $latestNote/string()
+                    
                     order by $applied descending
                     return
-                        <tr data-status="{$status}" data-company="{$company}">
+                        <tr data-status="{$status}" data-company="{$company}" data-note-type="{if ($noteType) then $noteType else 'Other'}">
                             <td>
                                 <a class="job-link" href="../../update.html?record={$id}">
                                     {$title}
@@ -121,7 +142,19 @@ return
                             <td class="status {$status}">
                                 {$status}
                             </td>
-                            <td>{if ($rejected) then $rejected else "-"}</td>
+                            
+                            <td>
+                                {
+                                    if ($noteType or $noteText) then
+                                        <span>
+                                            <strong>[{if ($noteType) then $noteType else "Other"}]</strong> 
+                                            {if ($noteText) then concat(" - ", $noteText) else ""}
+                                        </span>
+                                    else
+                                        "-"
+                                }
+                            </td>
+                            
                             <td>
                                 {
                                     if ($url) then
