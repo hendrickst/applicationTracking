@@ -71,10 +71,11 @@ declare function local:updateNotes($file, $values) {
                         {
                             for $i in $indexes
                             let $date := request:get-parameter(concat("notes[", $i, "][date]"), "")
+                            let $type := request:get-parameter(concat("notes[", $i, "][type]"), "Other") (: <-- Added :)
                             let $note := request:get-parameter(concat("notes[", $i, "][note]"), "")
                             order by xs:integer($i)
                             return
-                                <note date="{$date}">{string($note)}</note>
+                                <note date="{$date}" type="{$type}">{string($note)}</note> (: <-- Added type attribute :)
                         }
                         </notes>
     return
