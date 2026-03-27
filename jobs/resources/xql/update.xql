@@ -43,7 +43,7 @@ declare function local:updateFile($file){
     
     let $updateContacts := local:updateContacts($file) (: <-- Save contacts :)
     return
-        local:updateNotes($file, $notes) [cite: 48]
+        local:updateNotes($file, $notes)
 };
 
 declare function local:update($file, $xpath, $value) {
