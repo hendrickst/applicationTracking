@@ -40,8 +40,10 @@ declare function local:updateFile($file){
     let $updateDateApplied := local:update($file, '//@applied', $dateApplied)
     let $updateDateRejected := local:update($file, '//@rejected', $dateRejected)
     let $updateStatus := local:update($file, '//status', $status)
+    
+    let $updateContacts := local:updateContacts($file) (: <-- Save contacts :)
     return
-        local:updateNotes($file, $notes)
+        local:updateNotes($file, $notes) [cite: 48]
 };
 
 declare function local:update($file, $xpath, $value) {
@@ -80,6 +82,32 @@ declare function local:updateNotes($file, $values) {
                         </notes>
     return
         update replace $file//notes with $builtXML
+};
+
+declare function local:updateContacts($file) {
+    let $params := request:get-parameter-names()
+
+    let $indexes :=
+        distinct-values(
+            for $p in $params
+            where starts-with($p, "contacts[")
+            return
+                replace($p, "contacts\[(\d+)\].*", "$1")
+        )
+
+    let $builtXML :=    <contacts>
+                        {
+                            for $i in $indexes
+                            let $mail := request:get-parameter(concat("contacts[", $i, "][mail]"), "")
+                            let $phone := request:get-parameter(concat("contacts[", $i, "][phone]"), "")
+                            let $role := request:get-parameter(concat("contacts[", $i, "][role]"), "Other") (: <-- Capture Role :)
+                            order by xs:integer($i)
+                            return
+                                <contact mail="{$mail}" phone="{$phone}" role="{$role}"/> (: <-- Save as attribute :)
+                        }
+                        </contacts>
+    return
+        update replace $file//contacts with $builtXML
 };
 
     system:as-user($tsh:adminUser, $tsh:adminPassword, local:check())

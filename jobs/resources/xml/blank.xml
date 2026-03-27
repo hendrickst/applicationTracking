@@ -5,6 +5,9 @@
     <dates applied="" rejected=""/>
     <status/>
     <notes>
-        <note date=""/>
+        <note date="" type=""/>
     </notes>
+    <contacts>
+       <contact mail="" phone="" role=""/>
+    </contacts>
 </job>
