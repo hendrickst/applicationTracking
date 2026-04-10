@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<job id="">
+    <company/>
+    <url/>
+    <title/>
+    <dates applied="" rejected=""/>
+    <status/>
+    <notes>
+        <note date="" type=""/>
+    </notes>
+    <contacts>
+       <contact mail="" phone="" role=""/>
+    </contacts>
+</job>

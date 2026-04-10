@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Job Application Tracker</title>
+        <link rel="stylesheet" type="text/css" href="./resources/css/styles.css"/>
+    </head>
+    <body>
+
+        <div class="container">
+            <h1>Job Application Tracker</h1>
+            <p class="sub">Create new applications or view reports.</p>
+
+            <hr/>
+
+            <div class="grid">
+                <!-- Create New -->
+                <div class="field full">
+                    <a href="./update.html" class="btn primary" style="text-decoration:none; display:block; text-align:center;">+ Create New Application</a>
+                </div>
+    
+                <!-- View All -->
+                <div class="field">
+                    <a href="./resources/xql/report.xql" class="btn" style="text-decoration:none; display:block; text-align:center;">View All Applications</a>
+                </div>
+    
+                <!-- View Active -->
+                <div class="field">
+                    <a href="./resources/xql/report.xql?mode=active" class="btn" style="text-decoration:none; display:block; text-align:center;">View Active Applications</a>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
