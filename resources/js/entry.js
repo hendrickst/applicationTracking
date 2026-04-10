@@ -26,8 +26,8 @@ function normalizeUrl(value) {
 // ======================================================
 
 const state = {
-  notes: [],
-  contacts: [] // { id, name, role, mail, phone }
+  notes: [],      // { id, date, type, note }
+  contacts: []    // { id, role, mail, phone }
 };
 
 // ======================================================
@@ -42,7 +42,7 @@ function renderContacts() {
 
   if (state.contacts.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "card empty";
+    empty.className = "note-card empty";
     empty.textContent = "No contacts yet. Add one to track network leads.";
     container.appendChild(empty);
     return;
@@ -50,16 +50,11 @@ function renderContacts() {
 
   state.contacts.forEach((c, idx) => {
     const card = document.createElement("div");
-    card.className = "card contact-card";
+    card.className = "note-card";
 
     card.innerHTML = `
-      <div class="contact-row top">
-        <div class="field name">
-          <label>Name</label>
-          <input type="text" name="contacts[${idx}][name]" value="${c.name || ""}" placeholder="Full Name" />
-        </div>
-
-        <div class="field role">
+      <div class="note-grid three-col">
+        <div class="field">
           <label>Role</label>
           <select name="contacts[${idx}][role]">
             <option value="Recruiter" ${c.role === "Recruiter" ? "selected" : ""}>Recruiter</option>
@@ -69,21 +64,19 @@ function renderContacts() {
             <option value="Other" ${c.role === "Other" || !c.role ? "selected" : ""}>Other</option>
           </select>
         </div>
-      </div>
 
-      <div class="contact-row bottom">
         <div class="field">
-          <label>Email</label>
+          <label>Contact Email</label>
           <input type="email" name="contacts[${idx}][mail]" value="${c.mail || ""}" placeholder="email@company.com" />
         </div>
 
         <div class="field">
-          <label>Phone</label>
+          <label>Contact Phone</label>
           <input type="tel" name="contacts[${idx}][phone]" value="${c.phone || ""}" placeholder="555-555-5555" />
         </div>
       </div>
 
-      <div class="card-actions">
+      <div class="note-actions">
         <button type="button" class="btn danger" data-remove-contact="${c.id}">
           Remove
         </button>
@@ -108,7 +101,6 @@ function syncContactsFromDOM() {
     const card = container.children[idx];
     if (!card) return;
 
-    c.name = card.querySelector(`input[name="contacts[${idx}][name]"]`)?.value || "";
     c.role = card.querySelector(`select[name="contacts[${idx}][role]"]`)?.value || c.role;
     c.mail = card.querySelector(`input[name="contacts[${idx}][mail]"]`)?.value || "";
     c.phone = card.querySelector(`input[name="contacts[${idx}][phone]"]`)?.value || "";
@@ -119,7 +111,6 @@ function addContact() {
   syncContactsFromDOM();
   state.contacts.unshift({
     id: uid(),
-    name: "",
     role: "Recruiter",
     mail: "",
     phone: ""
@@ -128,7 +119,7 @@ function addContact() {
 }
 
 // ======================================================
-// Notes UI (UPDATED)
+// Notes UI
 // ======================================================
 
 function renderNotes() {
@@ -139,7 +130,7 @@ function renderNotes() {
 
   if (state.notes.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "card empty";
+    empty.className = "note-card empty";
     empty.textContent = "No notes yet. Add one to track progress.";
     container.appendChild(empty);
     return;
@@ -147,10 +138,10 @@ function renderNotes() {
 
   state.notes.forEach((n, idx) => {
     const card = document.createElement("div");
-    card.className = "card note-card";
+    card.className = "note-card";
 
     card.innerHTML = `
-      <div class="note-row top">
+      <div class="note-grid three-col">
         <div class="field">
           <label>Date</label>
           <input type="date" name="notes[${idx}][date]" value="${n.date || ""}" />
@@ -165,16 +156,14 @@ function renderNotes() {
             <option value="Other" ${n.type === "Other" || !n.type ? "selected" : ""}>Other</option>
           </select>
         </div>
-      </div>
 
-      <div class="note-row bottom">
         <div class="field">
           <label>Note</label>
           <textarea name="notes[${idx}][note]" placeholder="e.g. Phone screen with recruiter">${n.note || ""}</textarea>
         </div>
       </div>
 
-      <div class="card-actions">
+      <div class="note-actions">
         <button type="button" class="btn danger" data-remove-note="${n.id}">
           Remove
         </button>
@@ -284,6 +273,7 @@ async function populateForm() {
     const job = xmlDoc.querySelector("job");
     if (!job) return;
 
+    // Simple fields
     document.getElementById("companyName").value =
       job.querySelector("company")?.textContent.trim() || "";
 
@@ -293,6 +283,7 @@ async function populateForm() {
     document.getElementById("url").value =
       normalizeUrl(job.querySelector("url")?.textContent || "");
 
+    // Dates
     const dates = job.querySelector("dates");
     if (dates) {
       document.getElementById("dateApplied").value =
@@ -302,6 +293,7 @@ async function populateForm() {
         dates.getAttribute("rejected") || "";
     }
 
+    // Status (normalized)
     const statusEl = document.getElementById("status");
     if (statusEl) {
       const raw = job.querySelector("status")?.textContent || "";
@@ -321,7 +313,6 @@ async function populateForm() {
     job.querySelectorAll("contacts contact").forEach(c => {
       state.contacts.push({
         id: uid(),
-        name: c.getAttribute("name") || "",
         role: c.getAttribute("role") || "Other",
         mail: c.getAttribute("mail") || "",
         phone: c.getAttribute("phone") || ""
@@ -360,11 +351,13 @@ window.addEventListener("DOMContentLoaded", () => {
   const cancelBtn = document.getElementById("cancelBtn");
   const statusEl = document.getElementById("status");
 
+  // Load record ID from URL
   const recordParam = getParam("record");
   if (recordParam && recordEl) {
     recordEl.value = recordParam;
   }
 
+  // Bind events
   addNoteBtn?.addEventListener("click", addNote);
   addContactBtn?.addEventListener("click", addContact);
   statusEl?.addEventListener("change", syncRejectedField);
@@ -383,11 +376,13 @@ window.addEventListener("DOMContentLoaded", () => {
     window.location.href = document.referrer || "./index.html";
   });
 
+  // Initial UI setup
   renderContacts();
   renderNotes();
   syncRejectedField();
   updateSaveButtonState();
   highlightEmptyFields();
 
+  // Load data
   populateForm();
 });
