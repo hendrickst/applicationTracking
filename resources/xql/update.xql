@@ -98,12 +98,13 @@ declare function local:updateContacts($file) {
     let $builtXML :=    <contacts>
                         {
                             for $i in $indexes
+                            let $name := request:get-parameter(concat("contacts[", $i, "][name]"), "")
                             let $mail := request:get-parameter(concat("contacts[", $i, "][mail]"), "")
                             let $phone := request:get-parameter(concat("contacts[", $i, "][phone]"), "")
-                            let $role := request:get-parameter(concat("contacts[", $i, "][role]"), "Other") (: <-- Capture Role :)
+                            let $role := request:get-parameter(concat("contacts[", $i, "][role]"), "Other")
                             order by xs:integer($i)
                             return
-                                <contact mail="{$mail}" phone="{$phone}" role="{$role}"/> (: <-- Save as attribute :)
+                                <contact name="{$name}" mail="{$mail}" phone="{$phone}" role="{$role}"/>
                         }
                         </contacts>
     return
