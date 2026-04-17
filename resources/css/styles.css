@@ -2,12 +2,13 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   background: #f6f7fb;
   margin: 0;
-  padding: 24px;
+  padding: 0; /* UPDATED: remove global padding for full-page report */
 }
 
+/* Main container (used by both form + report) */
 .container {
   max-width: 900px;
-  margin: 0 auto;
+  margin: 24px auto; /* moved spacing here instead */
   background: white;
   border: 1px solid #e7e7ef;
   border-radius: 16px;
@@ -29,6 +30,8 @@ p.sub {
 .sub-tight {
   margin: 4px 0 0 0 !important;
 }
+
+/* ---------- Layout ---------- */
 
 .grid {
   display: grid;
@@ -89,6 +92,8 @@ hr {
   margin: 18px 0;
 }
 
+/* ---------- Notes ---------- */
+
 .notes-header {
   display: flex;
   justify-content: space-between;
@@ -99,32 +104,6 @@ hr {
 .notes-header h2 {
   font-size: 16px;
   margin: 0;
-}
-
-.btn {
-  border: 1px solid #d8d8e2;
-  background: #fff;
-  padding: 10px 12px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.btn.primary {
-  background: #7c3aed;
-  border-color: #7c3aed;
-  color: white;
-}
-
-.btn.danger {
-  background: #fff;
-  border-color: #f2c3c3;
-  color: #b91c1c;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .note-card {
@@ -148,14 +127,8 @@ hr {
 }
 
 .note-grid.three-col {
-  grid-template-columns: 160px 160px 1fr; /* Nice breakdown for Date, Dropdown, and flexible Textarea */
+  grid-template-columns: 160px 160px 1fr;
   gap: 14px;
-}
-
-@media (max-width: 720px) {
-  .note-grid.three-col {
-    grid-template-columns: 1fr; /* Stack vertically on mobile devices */
-  }
 }
 
 .note-actions {
@@ -164,12 +137,43 @@ hr {
   margin-top: 10px;
 }
 
+/* ---------- Buttons ---------- */
+
+.btn {
+  border: 1px solid #d8d8e2;
+  background: #fff;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn.primary {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: white;
+}
+
+.btn.danger {
+  border-color: #f2c3c3;
+  color: #b91c1c;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Footer ---------- */
+
 .footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 18px;
 }
+
+/* ---------- Output ---------- */
 
 .output {
   margin-top: 18px;
@@ -181,14 +185,24 @@ hr {
   font-size: 12px;
 }
 
-@media (max-width: 720px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
+/* ---------- Report Container (NEW) ---------- */
 
-  .note-grid {
-    grid-template-columns: 1fr;
-  }
+#report-container {
+  min-height: 200px;
+}
+
+/* Loading state */
+.loading {
+  padding: 60px 20px;
+  text-align: center;
+  font-size: 16px;
+  color: #666;
+}
+
+/* Error state */
+#report-container .error {
+  padding: 20px;
+  text-align: center;
 }
 
 /* ---------- Report Table ---------- */
@@ -222,6 +236,12 @@ hr {
   background: #f9fafc;
 }
 
+.report-table td:nth-child(4) {
+  text-align: center;
+}
+
+/* ---------- Links ---------- */
+
 .job-link {
   font-weight: 600;
   color: #7c3aed;
@@ -241,20 +261,7 @@ hr {
   text-decoration: underline;
 }
 
-/* Filter styles */
-
-.filter-bar {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  margin-top: 15px;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+/* ---------- Status Colors ---------- */
 
 .status.Rejected {
   color: #b91c1c;
@@ -271,25 +278,26 @@ hr {
   font-weight: 600;
 }
 
-.back-link {
-    margin-bottom: 20px;
+/* ---------- Filters ---------- */
+
+.filter-bar {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 15px;
 }
 
-.back-link a {
-    text-decoration: none;
-    color: #007bff;
-    font-weight: bold;
-}
-
-.back-link a:hover {
-    text-decoration: underline;
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* ---------- Summary Grid ---------- */
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Automatically squeezes or wraps 5 cards */
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
   margin: 20px 0 10px 0;
 }
@@ -313,7 +321,6 @@ hr {
   font-size: 28px;
   font-weight: 700;
   color: #7c3aed;
-  line-height: 1.2;
 }
 
 .summary-label {
@@ -324,43 +331,19 @@ hr {
   margin-top: 6px;
 }
 
-.report-table td:nth-child(4) {
-  text-align: center; /* Days Open */
-}
+/* ---------- Contacts ---------- */
 
-.report-table td:nth-child(3),
-.report-table td:nth-child(6) {
-  white-space: nowrap; /* Dates */
-}
-
-.report-table td:nth-child(6) {
-  max-width: 300px;
-  word-wrap: break-word;
-  white-space: normal; /* Permits multiline text wrapping */
-  font-size: 13px;
-}
-
-.filter-bar {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap; /* Wraps clean on small screens! */
-  margin-top: 15px;
-}
-
-/* Contact Card Layout */
 .contact-card {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* Rows */
 .contact-row {
   display: flex;
   gap: 12px;
 }
 
-/* Top row (Name + Role) */
 .contact-row.top .name {
   flex: 2;
 }
@@ -369,14 +352,57 @@ hr {
   flex: 1;
 }
 
-/* Bottom row (Email + Phone) */
 .contact-row.bottom .field {
   flex: 1;
 }
 
-/* Mobile friendly */
+/* ---------- Floating Action Button ---------- */
+
+.fab {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  background-color: #2563eb;
+  color: white;
+  font-size: 32px;
+  text-align: center;
+  line-height: 56px;
+  border-radius: 50%;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  z-index: 9999;
+  transition: background 0.2s ease;
+}
+
+.fab:hover {
+  background-color: #1d4ed8;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .note-grid,
+  .note-grid.three-col {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
   .contact-row {
     flex-direction: column;
   }
+}
+
+.row-rejected td:first-child {
+  border-left: 4px solid #b91c1c;
+}
+
+.row-interview td:first-child {
+  border-left: 4px solid #16a34a;
 }
