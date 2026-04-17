@@ -60,7 +60,7 @@ return
                 <tr class="{$rowClass}">
                     <td>{$job/company/text()}</td>
                     <td>
-                        <a href="../../update.html?record={$id}">
+                        <a href="./update.html?record={$id}">
                             {$job/title/text()}
                         </a>
                     </td>
