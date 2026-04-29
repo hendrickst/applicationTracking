@@ -406,3 +406,12 @@ hr {
 .row-interview td:first-child {
   border-left: 4px solid #16a34a;
 }
+
+.filter-bar {
+  margin-bottom: 10px;
+}
+
+#companyFilter {
+  padding: 6px;
+  width: 250px;
+}

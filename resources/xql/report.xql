@@ -36,8 +36,15 @@ return
             <div class="summary-label">Interview Notes</div>
         </div>
     </div>
+    
+    <div class="filter-bar">
+        <label for="companyFilter">Filter by Company:</label>
+        <select id="companyFilter" onchange="filterCompany()">
+            <option value="">All Companies</option>
+        </select>
+    </div>
 
-    <table class="report-table">
+    <table class="report-table" id="jobsTable">
         <thead>
             <tr>
                 <th>Company</th>
