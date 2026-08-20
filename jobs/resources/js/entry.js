@@ -1,4 +1,7 @@
-// ---------- Helpers ----------
+// ======================================================
+// Helpers
+// ======================================================
+
 function getParam(name) {
   return new URLSearchParams(window.location.search).get(name) || "";
 }
@@ -11,7 +14,6 @@ function uid() {
   return crypto?.randomUUID?.() || String(Date.now() + Math.random());
 }
 
-// Normalize URL helper
 function normalizeUrl(value) {
   const v = (value || "").trim();
   if (!v) return "";
@@ -19,375 +21,815 @@ function normalizeUrl(value) {
   return "https://" + v;
 }
 
-// ---------- State ----------
+// Safely escape text before inserting it into generated HTML.
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Format an ISO date for display.
+function formatDate(value) {
+  if (!value) return "";
+
+  const parts = value.split("-");
+  if (parts.length !== 3) return value;
+
+  return `${parts[1]}/${parts[2]}/${parts[0]}`;
+}
+
+// Create a short preview of a note.
+function notePreview(value, maxLength = 110) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+
+  if (!text) return "No note entered";
+
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return text.substring(0, maxLength).trimEnd() + "…";
+}
+
+
+// ======================================================
+// Global State
+// ======================================================
+
 const state = {
-  notes: [],    // { id, date, type, note }
-  contacts: []  // { id, role, mail, phone }
+  notes: [],
+  contacts: []
 };
 
-// ---------- Contacts UI ----------
-function renderContacts() {
-  const contactsContainer = document.getElementById("contactsContainer");
-  if (!contactsContainer) return;
 
-  contactsContainer.innerHTML = "";
+// ======================================================
+// Contacts UI
+// ======================================================
+
+function renderContacts(openId = null) {
+  const container = document.getElementById("contactsContainer");
+  if (!container) return;
+
+  container.innerHTML = "";
 
   if (state.contacts.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "note-card empty";
-    empty.textContent = "No contacts yet. Add one to track network leads.";
-    contactsContainer.appendChild(empty);
+    empty.className = "card empty";
+    empty.textContent =
+      "No contacts yet. Add one to track network leads.";
+    container.appendChild(empty);
     return;
   }
 
   state.contacts.forEach((c, idx) => {
     const card = document.createElement("div");
-    card.className = "note-card";
+
+    const isExpanded = c.id === openId || c.expanded === true;
+
+    card.className =
+      "card contact-card collapsible-card" +
+      (isExpanded ? " expanded" : "");
+
+    const name = escapeHtml(c.name || "Unnamed contact");
+    const role = escapeHtml(c.role || "Other");
+    const mail = escapeHtml(c.mail || "");
+    const phone = escapeHtml(c.phone || "");
+
+    const summaryContact = c.name
+      ? escapeHtml(c.name)
+      : "Unnamed contact";
+
+    const summaryRole = c.role
+      ? escapeHtml(c.role)
+      : "Other";
+
+    const contactDetails = [];
+
+    if (c.mail) {
+      contactDetails.push(escapeHtml(c.mail));
+    }
+
+    if (c.phone) {
+      contactDetails.push(escapeHtml(c.phone));
+    }
+
+    const summaryDetails = contactDetails.length
+      ? contactDetails.join(
+          ' <span class="separator">•</span> '
+        )
+      : "No contact information";
 
     card.innerHTML = `
-      <div class="note-grid three-col">
-        <div class="field">
-          <label>Role</label>
-          <select name="contacts[${idx}][role]">
-            <option value="Recruiter" ${c.role === "Recruiter" ? "selected" : ""}>Recruiter</option>
-            <option value="Hiring Manager" ${c.role === "Hiring Manager" ? "selected" : ""}>Hiring Manager</option>
-            <option value="Referral" ${c.role === "Referral" ? "selected" : ""}>Referral</option>
-            <option value="HR" ${c.role === "HR" ? "selected" : ""}>HR/Internal</option>
-            <option value="Other" ${c.role === "Other" || !c.role ? "selected" : ""}>Other</option>
-          </select>
+      <div class="card-summary" role="button" tabindex="0"
+           aria-expanded="${isExpanded ? "true" : "false"}">
+
+        <div class="card-summary-main">
+          <div class="card-summary-title">
+            ${summaryContact}
+          </div>
+
+          <div class="card-summary-detail">
+            <span>${summaryRole}</span>
+            <span class="separator">•</span>
+            <span>${summaryDetails}</span>
+          </div>
         </div>
 
-        <div class="field">
-          <label>Contact Email</label>
-          <input type="email" name="contacts[${idx}][mail]" value="${c.mail || ""}" placeholder="email@company.com" />
-        </div>
-
-        <div class="field">
-          <label>Contact Phone</label>
-          <input type="tel" name="contacts[${idx}][phone]" value="${c.phone || ""}" placeholder="555-555-5555" />
+        <div class="card-summary-arrow" aria-hidden="true">
+          ▼
         </div>
       </div>
 
-      <div class="note-actions">
-        <button type="button" class="btn danger" data-remove-contact="${c.id}">
-          Remove
-        </button>
+      <div class="card-body">
+        <div class="card-body-inner">
+
+          <div class="contact-row top">
+
+            <div class="field name">
+              <label>Name</label>
+              <input
+                type="text"
+                name="contacts[${idx}][name]"
+                value="${name}"
+                placeholder="Full Name"
+              />
+            </div>
+
+            <div class="field role">
+              <label>Role</label>
+              <select name="contacts[${idx}][role]">
+
+                <option value="Recruiter"
+                  ${c.role === "Recruiter" ? "selected" : ""}>
+                  Recruiter
+                </option>
+
+                <option value="Hiring Manager"
+                  ${c.role === "Hiring Manager" ? "selected" : ""}>
+                  Hiring Manager
+                </option>
+
+                <option value="Referral"
+                  ${c.role === "Referral" ? "selected" : ""}>
+                  Referral
+                </option>
+
+                <option value="HR"
+                  ${c.role === "HR" ? "selected" : ""}>
+                  HR/Internal
+                </option>
+
+                <option value="Other"
+                  ${c.role === "Other" || !c.role ? "selected" : ""}>
+                  Other
+                </option>
+
+              </select>
+            </div>
+
+          </div>
+
+          <div class="contact-row bottom">
+
+            <div class="field">
+              <label>Email</label>
+              <input
+                type="email"
+                name="contacts[${idx}][mail]"
+                value="${mail}"
+                placeholder="email@company.com"
+              />
+            </div>
+
+            <div class="field">
+              <label>Phone</label>
+              <input
+                type="tel"
+                name="contacts[${idx}][phone]"
+                value="${phone}"
+                placeholder="555-555-5555"
+              />
+            </div>
+
+          </div>
+
+          <div class="card-actions">
+            <button
+              type="button"
+              class="btn danger"
+              data-remove-contact="${c.id}">
+              Remove
+            </button>
+          </div>
+
+        </div>
       </div>
     `;
 
-    contactsContainer.appendChild(card);
+    container.appendChild(card);
 
-    const removeBtn = card.querySelector(`[data-remove-contact="${c.id}"]`);
-    removeBtn.addEventListener("click", () => {
-      state.contacts = state.contacts.filter(x => x.id !== c.id);
+    const summary = card.querySelector(".card-summary");
+
+    function toggleCard() {
+      syncContactsFromDOM();
+
+      c.expanded = !card.classList.contains("expanded");
+
       renderContacts();
+    }
+
+    summary.addEventListener("click", toggleCard);
+
+    summary.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleCard();
+      }
     });
+
+    card
+      .querySelector(`[data-remove-contact="${c.id}"]`)
+      ?.addEventListener("click", event => {
+        event.stopPropagation();
+
+        state.contacts = state.contacts.filter(
+          x => x.id !== c.id
+        );
+
+        renderContacts();
+      });
   });
 }
+
 
 function syncContactsFromDOM() {
-  const contactsContainer = document.getElementById("contactsContainer");
-  if (!contactsContainer) return;
+  const container = document.getElementById("contactsContainer");
+  if (!container) return;
 
   state.contacts.forEach((c, idx) => {
-    const contactCard = contactsContainer.children[idx];
-    if (!contactCard) return;
+    const card = container.querySelectorAll(".contact-card")[idx];
 
-    const roleInput = contactCard.querySelector(`select[name="contacts[${idx}][role]"]`);
-    const mailInput = contactCard.querySelector(`input[name="contacts[${idx}][mail]"]`);
-    const phoneInput = contactCard.querySelector(`input[name="contacts[${idx}][phone]"]`);
+    if (!card) return;
 
-    if (roleInput) c.role = roleInput.value;
-    if (mailInput) c.mail = mailInput.value;
-    if (phoneInput) c.phone = phoneInput.value;
+    c.name =
+      card.querySelector(
+        `input[name="contacts[${idx}][name]"]`
+      )?.value || "";
+
+    c.role =
+      card.querySelector(
+        `select[name="contacts[${idx}][role]"]`
+      )?.value || c.role;
+
+    c.mail =
+      card.querySelector(
+        `input[name="contacts[${idx}][mail]"]`
+      )?.value || "";
+
+    c.phone =
+      card.querySelector(
+        `input[name="contacts[${idx}][phone]"]`
+      )?.value || "";
   });
 }
+
 
 function addContact() {
   syncContactsFromDOM();
-  state.contacts.unshift({
+
+  state.contacts.forEach(c => {
+    c.expanded = false;
+  });
+
+  const newContact = {
     id: uid(),
+    name: "",
     role: "Recruiter",
     mail: "",
-    phone: ""
-  });
-  renderContacts();
+    phone: "",
+    expanded: true
+  };
+
+  state.contacts.unshift(newContact);
+
+  renderContacts(newContact.id);
 }
 
 
-// ---------- Notes UI ----------
-function renderNotes() {
-  const notesContainer = document.getElementById("notesContainer");
-  if (!notesContainer) return;
+// ======================================================
+// Notes UI
+// ======================================================
 
-  notesContainer.innerHTML = "";
+function renderNotes(openId = null) {
+  const container = document.getElementById("notesContainer");
+  if (!container) return;
+
+  container.innerHTML = "";
 
   if (state.notes.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "note-card empty";
-    empty.textContent = "No notes yet. Add one to track progress.";
-    notesContainer.appendChild(empty);
+    empty.className = "card empty";
+    empty.textContent =
+      "No notes yet. Add one to track progress.";
+    container.appendChild(empty);
     return;
   }
 
   state.notes.forEach((n, idx) => {
     const card = document.createElement("div");
-    card.className = "note-card";
+
+    const isExpanded = n.id === openId || n.expanded === true;
+
+    card.className =
+      "card note-card collapsible-card" +
+      (isExpanded ? " expanded" : "");
+
+    const noteType = escapeHtml(n.type || "Other");
+    const noteDate = formatDate(n.date);
+    const preview = escapeHtml(notePreview(n.note));
+
+    const summaryDate = noteDate || "No date";
 
     card.innerHTML = `
-      <div class="note-grid three-col">
-        <div class="field">
-          <label>Date</label>
-          <input type="date" name="notes[${idx}][date]" value="${n.date || ""}" />
+      <div class="card-summary" role="button" tabindex="0"
+           aria-expanded="${isExpanded ? "true" : "false"}">
+
+        <div class="card-summary-main">
+
+          <div class="card-summary-title">
+            ${summaryDate}
+            <span class="separator">•</span>
+            ${noteType}
+          </div>
+
+          <div class="card-summary-detail">
+            <span>${preview}</span>
+          </div>
+
         </div>
 
-        <div class="field">
-          <label>Type</label>
-          <select name="notes[${idx}][type]">
-            <option value="Initial" ${n.type === 'Initial' ? 'selected' : ''}>Initial</option>
-            <option value="Interview" ${n.type === 'Interview' ? 'selected' : ''}>Interview</option>
-            <option value="Rejection" ${n.type === 'Rejection' ? 'selected' : ''}>Rejection</option>
-            <option value="Other" ${n.type === 'Other' || !n.type ? 'selected' : ''}>Other</option>
-          </select>
+        <div class="card-summary-arrow" aria-hidden="true">
+          ▼
         </div>
 
-        <div class="field">
-          <label>Note</label>
-          <textarea name="notes[${idx}][note]" placeholder="e.g. Phone screen with recruiter">${n.note || ""}</textarea>
-        </div>
       </div>
 
-      <div class="note-actions">
-        <button type="button" class="btn danger" data-remove-note="${n.id}">
-          Remove
-        </button>
+      <div class="card-body">
+        <div class="card-body-inner">
+
+          <div class="note-row top">
+
+            <div class="field">
+              <label>Date</label>
+              <input
+                type="date"
+                name="notes[${idx}][date]"
+                value="${escapeHtml(n.date || "")}"
+              />
+            </div>
+
+            <div class="field">
+              <label>Type</label>
+              <select name="notes[${idx}][type]">
+
+                <option value="Initial"
+                  ${n.type === "Initial" ? "selected" : ""}>
+                  Initial
+                </option>
+
+                <option value="Interview"
+                  ${n.type === "Interview" ? "selected" : ""}>
+                  Interview
+                </option>
+
+                <option value="Rejection"
+                  ${n.type === "Rejection" ? "selected" : ""}>
+                  Rejection
+                </option>
+
+                <option value="Other"
+                  ${n.type === "Other" || !n.type ? "selected" : ""}>
+                  Other
+                </option>
+
+              </select>
+            </div>
+
+          </div>
+
+          <div class="note-row bottom">
+
+            <div class="field">
+              <label>Note</label>
+
+              <textarea
+                name="notes[${idx}][note]"
+                placeholder="e.g. Phone screen with recruiter"
+              >${escapeHtml(n.note || "")}</textarea>
+
+            </div>
+
+          </div>
+
+          <div class="card-actions">
+
+            <button
+              type="button"
+              class="btn danger"
+              data-remove-note="${n.id}">
+              Remove
+            </button>
+
+          </div>
+
+        </div>
       </div>
     `;
 
-    notesContainer.appendChild(card);
+    container.appendChild(card);
 
-    const removeBtn = card.querySelector(`[data-remove-note="${n.id}"]`);
-    removeBtn.addEventListener("click", () => {
-      state.notes = state.notes.filter(x => x.id !== n.id);
+    const summary = card.querySelector(".card-summary");
+
+    function toggleCard() {
+      syncNotesFromDOM();
+
+      n.expanded = !card.classList.contains("expanded");
+
       renderNotes();
+    }
+
+    summary.addEventListener("click", toggleCard);
+
+    summary.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleCard();
+      }
     });
+
+    card
+      .querySelector(`[data-remove-note="${n.id}"]`)
+      ?.addEventListener("click", event => {
+        event.stopPropagation();
+
+        state.notes = state.notes.filter(
+          x => x.id !== n.id
+        );
+
+        renderNotes();
+      });
   });
 }
+
 
 function syncNotesFromDOM() {
-  const notesContainer = document.getElementById("notesContainer");
-  if (!notesContainer) return;
+  const container = document.getElementById("notesContainer");
+  if (!container) return;
 
   state.notes.forEach((n, idx) => {
-    const noteCard = notesContainer.children[idx];
-    if (!noteCard) return;
+    const card = container.querySelectorAll(".note-card")[idx];
 
-    const dateInput = noteCard.querySelector(`input[name="notes[${idx}][date]"]`);
-    const typeInput = noteCard.querySelector(`select[name="notes[${idx}][type]"]`); 
-    const noteInput = noteCard.querySelector(`textarea[name="notes[${idx}][note]"]`);
-    
-    if (dateInput) n.date = dateInput.value;
-    if (typeInput) n.type = typeInput.value; 
-    if (noteInput) n.note = noteInput.value;
+    if (!card) return;
+
+    n.date =
+      card.querySelector(
+        `input[name="notes[${idx}][date]"]`
+      )?.value || "";
+
+    n.type =
+      card.querySelector(
+        `select[name="notes[${idx}][type]"]`
+      )?.value || "Other";
+
+    n.note =
+      card.querySelector(
+        `textarea[name="notes[${idx}][note]"]`
+      )?.value || "";
   });
 }
+
 
 function addNote() {
   syncNotesFromDOM();
-  state.notes.unshift({
+
+  state.notes.forEach(n => {
+    n.expanded = false;
+  });
+
+  const newNote = {
     id: uid(),
     date: todayISO(),
-    type: "Other", 
-    note: ""
-  });
-  renderNotes();
+    type: "Other",
+    note: "",
+    expanded: true
+  };
+
+  state.notes.unshift(newNote);
+
+  renderNotes(newNote.id);
 }
 
-// ---------- Validation ----------
+
+// ======================================================
+// Validation
+// ======================================================
+
 function updateSaveButtonState() {
   const companyName = document.getElementById("companyName");
   const jobTitle = document.getElementById("jobTitle");
   const saveBtn = document.getElementById("saveBtn");
+
   if (!companyName || !jobTitle || !saveBtn) return;
 
-  const enabled = companyName.value.trim() !== "" && jobTitle.value.trim() !== "";
-  saveBtn.disabled = !enabled;
+  saveBtn.disabled =
+    companyName.value.trim() === "" ||
+    jobTitle.value.trim() === "";
 }
+
 
 function highlightEmptyFields() {
   const companyName = document.getElementById("companyName");
   const jobTitle = document.getElementById("jobTitle");
+
   if (!companyName || !jobTitle) return;
 
-  companyName.style.borderColor = companyName.value.trim() ? "#d8d8e2" : "#b91c1c";
-  jobTitle.style.borderColor = jobTitle.value.trim() ? "#d8d8e2" : "#b91c1c";
+  companyName.style.borderColor =
+    companyName.value.trim()
+      ? "#d8d8e2"
+      : "#b91c1c";
+
+  jobTitle.style.borderColor =
+    jobTitle.value.trim()
+      ? "#d8d8e2"
+      : "#b91c1c";
 }
 
-// ---------- Status behavior ----------
+
+// ======================================================
+// Status → Rejected Date Sync
+// ======================================================
+
 function syncRejectedField() {
   const status = document.getElementById("status");
   const dateRejected = document.getElementById("dateRejected");
+
   if (!status || !dateRejected) return;
 
-  const rejected = status.value === "Rejected";
-  dateRejected.disabled = !rejected;
-  if (!rejected) dateRejected.value = "";
+  const isRejected = status.value === "Rejected";
+
+  dateRejected.disabled = !isRejected;
+
+  if (!isRejected) {
+    dateRejected.value = "";
+  }
 }
 
-// ---------- Populate Form (Updated for <job> XML) ----------
+
+// ======================================================
+// Populate Form
+// ======================================================
+
 async function populateForm() {
   const recordEl = document.getElementById("record");
-  if (!recordEl) return;
 
-  const recordId = recordEl.value || "";
-  if (!recordId) return;
+  if (!recordEl || !recordEl.value) return;
 
-  const urlFetch = `./resources/xql/populate.xql?record=${encodeURIComponent(recordId)}`;
+  const urlFetch =
+    `./resources/xql/populate.xql?record=${encodeURIComponent(
+      recordEl.value
+    )}`;
 
   try {
-    const response = await fetch(urlFetch, { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const response = await fetch(urlFetch, {
+      cache: "no-store"
+    });
 
-    const text = await response.text();
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(text, "application/xml");
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const xml = await response.text();
+
+    const xmlDoc =
+      new DOMParser().parseFromString(
+        xml,
+        "application/xml"
+      );
 
     const job = xmlDoc.querySelector("job");
+
     if (!job) return;
 
-    // ---- Standard simple fields ----
-    const companyName = document.getElementById("companyName");
-    const jobTitle = document.getElementById("jobTitle");
-    const url = document.getElementById("url");
+    document.getElementById("companyName").value =
+      job.querySelector("company")
+        ?.textContent.trim() || "";
 
-    if (companyName) companyName.value = job.querySelector("company")?.textContent.trim() || "";
-    if (jobTitle) jobTitle.value = job.querySelector("title")?.textContent.trim() || "";
-    if (url) url.value = normalizeUrl(job.querySelector("url")?.textContent || "");
+    document.getElementById("jobTitle").value =
+      job.querySelector("title")
+        ?.textContent.trim() || "";
 
-    // ---- Dates ----
-    const dateApplied = document.getElementById("dateApplied");
-    const dateRejected = document.getElementById("dateRejected");
+    document.getElementById("url").value =
+      normalizeUrl(
+        job.querySelector("url")
+          ?.textContent || ""
+      );
+
     const dates = job.querySelector("dates");
 
     if (dates) {
-      if (dateApplied) dateApplied.value = dates.getAttribute("applied") || "";
-      if (dateRejected) dateRejected.value = dates.getAttribute("rejected") || "";
+      document.getElementById("dateApplied").value =
+        dates.getAttribute("applied") || "";
+
+      document.getElementById("dateRejected").value =
+        dates.getAttribute("rejected") || "";
     }
 
-    // ---- Status ----
-    const status = document.getElementById("status");
-    const statusText = job.querySelector("status")?.textContent.trim() || "Submitted";
+    const statusEl =
+      document.getElementById("status");
 
-    if (status) {
-      if ([...status.options].some(o => o.value === statusText)) {
-        status.value = statusText;
-      } else {
-        status.value = "Submitted";
-      }
+    if (statusEl) {
+      const raw =
+        job.querySelector("status")
+          ?.textContent || "";
+
+      const normalized =
+        raw.trim().toLowerCase();
+
+      const match =
+        [...statusEl.options].find(
+          o =>
+            o.value.trim().toLowerCase() ===
+            normalized
+        );
+
+      statusEl.value =
+        match
+          ? match.value
+          : "Submitted";
     }
 
     syncRejectedField();
 
-    // ---- Contacts Parsing ----
-    state.contacts = [];
-    job.querySelectorAll("contacts contact").forEach(c => {
-      state.contacts.push({
-        id: uid(),
-        role: c.getAttribute("role") || "Other",
-        mail: c.getAttribute("mail") || "",
-        phone: c.getAttribute("phone") || ""
-      });
-    });
 
-    // ---- Notes Parsing ----
-    state.notes = [];
-    job.querySelectorAll("notes note").forEach(n => {
-      state.notes.push({
-        id: uid(),
-        date: n.getAttribute("date") || "",
-        type: n.getAttribute("type") || "Other", 
-        note: n.textContent.trim()
+    // --------------------------------------------------
+    // Contacts
+    // --------------------------------------------------
+
+    state.contacts = [];
+
+    job.querySelectorAll("contacts contact")
+      .forEach(c => {
+        state.contacts.push({
+          id: uid(),
+          name: c.getAttribute("name") || "",
+          role: c.getAttribute("role") || "Other",
+          mail: c.getAttribute("mail") || "",
+          phone: c.getAttribute("phone") || "",
+          expanded: false
+        });
       });
-    });
+
+
+    // --------------------------------------------------
+    // Notes
+    // --------------------------------------------------
+
+    state.notes = [];
+
+    job.querySelectorAll("notes note")
+      .forEach(n => {
+        state.notes.push({
+          id: uid(),
+          date: n.getAttribute("date") || "",
+          type: n.getAttribute("type") || "Other",
+          note: n.textContent.trim(),
+          expanded: false
+        });
+      });
+
 
     renderContacts();
     renderNotes();
+
     updateSaveButtonState();
     highlightEmptyFields();
 
   } catch (err) {
-    console.error("Failed to populate form:", err);
+    console.error(
+      "Failed to populate form:",
+      err
+    );
   }
 }
 
-// ---------- Init ----------
-window.addEventListener("DOMContentLoaded", () => {
-  console.log("DOM fully loaded. Starting initialization...");
 
-  // 1. Grab elements FIRST
-  const recordEl = document.getElementById("record");
-  const companyName = document.getElementById("companyName");
-  const jobTitle = document.getElementById("jobTitle");
-  const status = document.getElementById("status");
-  const addNoteBtn = document.getElementById("addNoteBtn");
-  const addContactBtn = document.getElementById("addContactBtn");
-  const cancelBtn = document.getElementById("cancelBtn");
+// ======================================================
+// Init
+// ======================================================
 
-  // 2. Process record parameter from URL query string SECOND
-  const recordParam = getParam("record");
-  if (recordParam && recordEl) {
-    recordEl.value = recordParam;
-  }
+window.addEventListener(
+  "DOMContentLoaded",
+  () => {
 
-  // --- SAFE BINDINGS ---
-  if (addNoteBtn) {
-    addNoteBtn.addEventListener("click", addNote);
-    console.log("✅ Notes button bound.");
-  } else {
-    console.warn("⚠️ Could not find 'addNoteBtn' in HTML.");
-  }
+    const recordEl =
+      document.getElementById("record");
 
-  if (addContactBtn) {
-    addContactBtn.addEventListener("click", addContact);
-    console.log("✅ Contacts button bound.");
-  } else {
-    console.warn("⚠️ Could not find 'addContactBtn' in HTML.");
-  }
+    const addNoteBtn =
+      document.getElementById("addNoteBtn");
 
-  if (status) {
-    status.addEventListener("change", syncRejectedField);
-  }
+    const addContactBtn =
+      document.getElementById("addContactBtn");
 
-  if (companyName) {
-    companyName.addEventListener("input", () => {
-      updateSaveButtonState();
-      highlightEmptyFields();
-    });
-  }
+    const cancelBtn =
+      document.getElementById("cancelBtn");
 
-  if (jobTitle) {
-    jobTitle.addEventListener("input", () => {
-      updateSaveButtonState();
-      highlightEmptyFields();
-    });
-  }
+    const statusEl =
+      document.getElementById("status");
 
-  if (cancelBtn) {
-    cancelBtn.addEventListener("click", () => {
-      if (document.referrer) {
-        window.location.href = document.referrer;
-      } else {
-        window.location.href = "./index.html";
+
+    // --------------------------------------------------
+    // Record parameter
+    // --------------------------------------------------
+
+    const recordParam =
+      getParam("record");
+
+    if (recordParam && recordEl) {
+      recordEl.value = recordParam;
+    }
+
+
+    // --------------------------------------------------
+    // Event handlers
+    // --------------------------------------------------
+
+    addNoteBtn?.addEventListener(
+      "click",
+      addNote
+    );
+
+    addContactBtn?.addEventListener(
+      "click",
+      addContact
+    );
+
+    statusEl?.addEventListener(
+      "change",
+      syncRejectedField
+    );
+
+
+    document
+      .getElementById("companyName")
+      ?.addEventListener(
+        "input",
+        () => {
+          updateSaveButtonState();
+          highlightEmptyFields();
+        }
+      );
+
+
+    document
+      .getElementById("jobTitle")
+      ?.addEventListener(
+        "input",
+        () => {
+          updateSaveButtonState();
+          highlightEmptyFields();
+        }
+      );
+
+
+    cancelBtn?.addEventListener(
+      "click",
+      () => {
+        window.location.href =
+          document.referrer ||
+          "./index.html";
       }
-    });
+    );
+
+
+    // --------------------------------------------------
+    // Initial rendering
+    // --------------------------------------------------
+
+    renderContacts();
+    renderNotes();
+
+    syncRejectedField();
+    updateSaveButtonState();
+    highlightEmptyFields();
+
+
+    // --------------------------------------------------
+    // Populate existing record
+    // --------------------------------------------------
+
+    populateForm();
   }
-
-  // Initial draw
-  renderContacts();
-  renderNotes();
-  syncRejectedField();
-  updateSaveButtonState();
-  highlightEmptyFields();
-
-  populateForm();
-});
+);
