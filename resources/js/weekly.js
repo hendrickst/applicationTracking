@@ -193,7 +193,7 @@ function renderTable(weeks) {
 
 function formatWeek(dateString) {
     return parseLocalDate(dateString).toLocaleDateString(undefined, {
-        month: "short", day: "numeric", year: "numeric"
+        month: "short", day: "numeric"
     });
 }
 
