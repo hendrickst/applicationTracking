@@ -114,34 +114,39 @@ function renderChart(weeks) {
         `${i === 0 ? "M" : "L"} ${x(i).toFixed(1)} ${y(w[key]).toFixed(1)}`
     ).join(" ");
 
-    let svg = `<svg class="weekly-svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="weekly-chart-title">
+    // Build the SVG as an SVG document before inserting it into the XHTML page.
+    // Direct innerHTML insertion in eXist's XHTML page can create SVG elements in
+    // the XHTML namespace, causing browsers to display the SVG text but not draw
+    // its lines, circles, and other graphical elements.
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="weekly-svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="weekly-chart-title">
         <title id="weekly-chart-title">Weekly application and rejection trends</title>
         <text class="chart-title" x="${width / 2}" y="25" text-anchor="middle">Weekly Application &amp; Rejection Trends</text>`;
+
+    let svgMarkup = svg;
 
     for (let i = 0; i <= 5; i++) {
         const value = Math.round((yMax / 5) * i);
         const yy = y(value);
-        svg += `<line class="chart-grid" x1="${margin.left}" y1="${yy}" x2="${width - margin.right}" y2="${yy}"/>`;
-        svg += `<text class="chart-axis-label" x="${margin.left - 12}" y="${yy + 4}" text-anchor="end">${value}</text>`;
+        svgMarkup += `<line class="chart-grid" x1="${margin.left}" y1="${yy}" x2="${width - margin.right}" y2="${yy}"/>`;
+        svgMarkup += `<text class="chart-axis-label" x="${margin.left - 12}" y="${yy + 4}" text-anchor="end">${value}</text>`;
     }
 
-    svg += `<line class="chart-axis" x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${width - margin.right}" y2="${margin.top + plotHeight}"/>`;
-    svg += `<text class="chart-y-title" transform="translate(18 ${margin.top + plotHeight / 2}) rotate(-90)" text-anchor="middle">Number of Applications</text>`;
+    svgMarkup += `<line class="chart-axis" x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${width - margin.right}" y2="${margin.top + plotHeight}"/>`;
+    svgMarkup += `<text class="chart-y-title" transform="translate(18 ${margin.top + plotHeight / 2}) rotate(-90)" text-anchor="middle">Number of Applications</text>`;
 
-    // Two distinct progression lines: applications and rejected applications.
-    svg += `<path class="chart-line applications-line" d="${linePath("applications")}"/>`;
-    svg += `<path class="chart-line rejected-line" d="${linePath("rejected")}"/>`;
+    svgMarkup += `<path class="chart-line applications-line" d="${linePath("applications")}"/>`;
+    svgMarkup += `<path class="chart-line rejected-line" d="${linePath("rejected")}"/>`;
 
     weeks.forEach((w, i) => {
         const labelEvery = Math.max(1, Math.ceil(weeks.length / 12));
         if (i % labelEvery === 0 || i === weeks.length - 1) {
-            svg += `<text class="chart-x-label" x="${x(i)}" y="${height - 45}" text-anchor="middle">${formatWeek(w.week)}</text>`;
+            svgMarkup += `<text class="chart-x-label" x="${x(i)}" y="${height - 45}" text-anchor="middle">${formatWeek(w.week)}</text>`;
         }
-        svg += `<circle class="chart-point applications-point" cx="${x(i)}" cy="${y(w.applications)}" r="4"><title>${formatWeek(w.week)}: ${w.applications} applications</title></circle>`;
-        svg += `<circle class="chart-point rejected-point" cx="${x(i)}" cy="${y(w.rejected)}" r="4"><title>${formatWeek(w.week)}: ${w.rejected} rejected</title></circle>`;
+        svgMarkup += `<circle class="chart-point applications-point" cx="${x(i)}" cy="${y(w.applications)}" r="4"><title>${formatWeek(w.week)}: ${w.applications} applications</title></circle>`;
+        svgMarkup += `<circle class="chart-point rejected-point" cx="${x(i)}" cy="${y(w.rejected)}" r="4"><title>${formatWeek(w.week)}: ${w.rejected} rejected</title></circle>`;
     });
 
-    svg += `<g class="chart-legend">
+    svgMarkup += `<g class="chart-legend">
         <line class="legend-line applications-line" x1="${margin.left}" y1="${height - 15}" x2="${margin.left + 30}" y2="${height - 15}"/>
         <circle class="applications-point" cx="${margin.left + 15}" cy="${height - 15}" r="4"/>
         <text x="${margin.left + 40}" y="${height - 11}">Applications submitted</text>
@@ -150,7 +155,12 @@ function renderChart(weeks) {
         <text x="${margin.left + 260}" y="${height - 11}">Applications rejected</text>
     </g></svg>`;
 
-    container.innerHTML = svg;
+    const svgDocument = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
+    if (svgDocument.querySelector("parsererror")) {
+        throw new Error("Unable to build weekly chart SVG");
+    }
+
+    container.replaceChildren(document.importNode(svgDocument.documentElement, true));
 }
 
 function renderTable(weeks) {
