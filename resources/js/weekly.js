@@ -51,9 +51,23 @@ function buildWeeklyData(applications) {
     });
 
     const weeks = [];
+    let cumulativeApplications = 0;
+    let cumulativeRejected = 0;
+
     for (let week = new Date(minWeek); week <= maxWeek; week.setDate(week.getDate() + 7)) {
         const key = dateKey(week);
-        weeks.push(weekly.get(key) || { week: key, applications: 0, rejected: 0 });
+        const entry = weekly.get(key) || { week: key, applications: 0, rejected: 0 };
+
+        cumulativeApplications += entry.applications;
+        cumulativeRejected += entry.rejected;
+
+        weeks.push({
+            week: key,
+            applications: entry.applications,
+            rejected: entry.rejected,
+            cumulativeApplications,
+            cumulativeRejected
+        });
     }
 
     return {
@@ -103,7 +117,7 @@ function renderChart(weeks) {
     const margin = { top: 45, right: 40, bottom: 90, left: 65 };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
-    const maxValue = Math.max(1, ...weeks.map(w => Math.max(w.applications, w.rejected)));
+    const maxValue = Math.max(1, ...weeks.map(w => Math.max(w.cumulativeApplications, w.cumulativeRejected)));
     const yMax = Math.max(5, Math.ceil(maxValue / 5) * 5);
 
     const x = i => weeks.length === 1
@@ -115,12 +129,9 @@ function renderChart(weeks) {
     ).join(" ");
 
     // Build the SVG as an SVG document before inserting it into the XHTML page.
-    // Direct innerHTML insertion in eXist's XHTML page can create SVG elements in
-    // the XHTML namespace, causing browsers to display the SVG text but not draw
-    // its lines, circles, and other graphical elements.
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="weekly-svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="weekly-chart-title">
-        <title id="weekly-chart-title">Weekly application and rejection trends</title>
-        <text class="chart-title" x="${width / 2}" y="25" text-anchor="middle">Weekly Application &amp; Rejection Trends</text>`;
+        <title id="weekly-chart-title">Cumulative weekly application and rejection trends</title>
+        <text class="chart-title" x="${width / 2}" y="25" text-anchor="middle">Cumulative Application &amp; Rejection Trends</text>`;
 
     let svgMarkup = svg;
 
@@ -132,27 +143,27 @@ function renderChart(weeks) {
     }
 
     svgMarkup += `<line class="chart-axis" x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${width - margin.right}" y2="${margin.top + plotHeight}"/>`;
-    svgMarkup += `<text class="chart-y-title" transform="translate(18 ${margin.top + plotHeight / 2}) rotate(-90)" text-anchor="middle">Number of Applications</text>`;
+    svgMarkup += `<text class="chart-y-title" transform="translate(18 ${margin.top + plotHeight / 2}) rotate(-90)" text-anchor="middle">Cumulative Applications</text>`;
 
-    svgMarkup += `<path class="chart-line applications-line" d="${linePath("applications")}"/>`;
-    svgMarkup += `<path class="chart-line rejected-line" d="${linePath("rejected")}"/>`;
+    svgMarkup += `<path class="chart-line applications-line" d="${linePath("cumulativeApplications")}"/>`;
+    svgMarkup += `<path class="chart-line rejected-line" d="${linePath("cumulativeRejected")}"/>`;
 
     weeks.forEach((w, i) => {
         const labelEvery = Math.max(1, Math.ceil(weeks.length / 12));
         if (i % labelEvery === 0 || i === weeks.length - 1) {
             svgMarkup += `<text class="chart-x-label" x="${x(i)}" y="${height - 45}" text-anchor="middle">${formatWeek(w.week)}</text>`;
         }
-        svgMarkup += `<circle class="chart-point applications-point" cx="${x(i)}" cy="${y(w.applications)}" r="4"><title>${formatWeek(w.week)}: ${w.applications} applications</title></circle>`;
-        svgMarkup += `<circle class="chart-point rejected-point" cx="${x(i)}" cy="${y(w.rejected)}" r="4"><title>${formatWeek(w.week)}: ${w.rejected} rejected</title></circle>`;
+        svgMarkup += `<circle class="chart-point applications-point" cx="${x(i)}" cy="${y(w.cumulativeApplications)}" r="4"><title>${formatWeek(w.week)}: ${w.cumulativeApplications} cumulative applications</title></circle>`;
+        svgMarkup += `<circle class="chart-point rejected-point" cx="${x(i)}" cy="${y(w.cumulativeRejected)}" r="4"><title>${formatWeek(w.week)}: ${w.cumulativeRejected} cumulative rejected</title></circle>`;
     });
 
     svgMarkup += `<g class="chart-legend">
         <line class="legend-line applications-line" x1="${margin.left}" y1="${height - 15}" x2="${margin.left + 30}" y2="${height - 15}"/>
         <circle class="applications-point" cx="${margin.left + 15}" cy="${height - 15}" r="4"/>
-        <text x="${margin.left + 40}" y="${height - 11}">Applications submitted</text>
+        <text x="${margin.left + 40}" y="${height - 11}">Cumulative applications</text>
         <line class="legend-line rejected-line" x1="${margin.left + 220}" y1="${height - 15}" x2="${margin.left + 250}" y2="${height - 15}"/>
         <circle class="rejected-point" cx="${margin.left + 235}" cy="${height - 15}" r="4"/>
-        <text x="${margin.left + 260}" y="${height - 11}">Applications rejected</text>
+        <text x="${margin.left + 260}" y="${height - 11}">Cumulative rejected</text>
     </g></svg>`;
 
     const svgDocument = new DOMParser().parseFromString(svgMarkup, "image/svg+xml");
