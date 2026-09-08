@@ -147,13 +147,22 @@ function renderChart(weeks) {
 
     svgMarkup += `<line class="chart-axis" x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${width - margin.right}" y2="${margin.top + plotHeight}"/>`;
     svgMarkup += `<text class="chart-y-title" transform="translate(18 ${margin.top + plotHeight / 2}) rotate(-90)" text-anchor="middle">Cumulative Applications</text>`;
+
+    // Add vertical separators at the first week of each month.
+    weeks.forEach((w, i) => {
+        if (i === 0 || w.week.substring(0, 7) !== weeks[i - 1].week.substring(0, 7)) {
+            svgMarkup += `<line class="chart-month-separator" x1="${x(i)}" y1="${margin.top}" x2="${x(i)}" y2="${margin.top + plotHeight}"/>`;
+        }
+    });
+
     svgMarkup += `<path class="chart-line applications-line" d="${linePath("cumulativeApplications")}"/>`;
     svgMarkup += `<path class="chart-line rejected-line" d="${linePath("cumulativeRejected")}"/>`;
 
     weeks.forEach((w, i) => {
-        const labelEvery = Math.max(1, Math.ceil(weeks.length / 12));
-        if (i % labelEvery === 0 || i === weeks.length - 1) {
-            svgMarkup += `<text class="chart-x-label" x="${x(i)}" y="${height - 45}" text-anchor="middle">${formatWeek(w.week)}</text>`;
+        // Show one label per month, using the month/year of the first plotted week.
+        const isFirstWeekOfMonth = i === 0 || w.week.substring(0, 7) !== weeks[i - 1].week.substring(0, 7);
+        if (isFirstWeekOfMonth) {
+            svgMarkup += `<text class="chart-x-label" x="${x(i)}" y="${height - 45}" text-anchor="start">${formatMonth(w.week)}</text>`;
         }
         svgMarkup += `<circle class="chart-point applications-point" cx="${x(i)}" cy="${y(w.cumulativeApplications)}" r="4"><title>${formatWeek(w.week)}: ${w.cumulativeApplications} cumulative applications</title></circle>`;
         svgMarkup += `<circle class="chart-point rejected-point" cx="${x(i)}" cy="${y(w.cumulativeRejected)}" r="4"><title>${formatWeek(w.week)}: ${w.cumulativeRejected} cumulative rejected</title></circle>`;
@@ -194,6 +203,12 @@ function renderTable(weeks) {
 function formatWeek(dateString) {
     return parseLocalDate(dateString).toLocaleDateString(undefined, {
         month: "short", day: "numeric"
+    });
+}
+
+function formatMonth(dateString) {
+    return parseLocalDate(dateString).toLocaleDateString(undefined, {
+        month: "short", year: "numeric"
     });
 }
 
