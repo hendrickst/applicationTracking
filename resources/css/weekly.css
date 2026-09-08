@@ -1,0 +1,94 @@
+.page-nav {
+    margin-bottom: 16px;
+    font-size: 14px;
+    border: 0;
+    padding: 0;
+}
+
+.page-nav a {
+    color: #7c3aed;
+    text-decoration: none;
+    border: 0;
+    box-shadow: none;
+    font-weight: 600;
+}
+
+.page-nav a:hover {
+    text-decoration: underline;
+}
+
+.weekly-chart {
+    margin-top: 24px;
+    padding: 12px 8px 0;
+    border: 1px solid #e7e7ef;
+    border-radius: 16px;
+    background: #fff;
+    overflow-x: auto;
+}
+
+.weekly-svg {
+    display: block;
+    width: 100%;
+    min-width: 700px;
+    height: auto;
+}
+
+.chart-grid {
+    stroke: #ececf3;
+    stroke-width: 1;
+}
+
+.chart-axis {
+    stroke: #c9c9d3;
+    stroke-width: 1;
+}
+
+.chart-month-separator {
+    stroke: #b8b8c5;
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+}
+
+.chart-axis-label,
+.chart-x-label {
+    fill: #666;
+    font-size: 12px;
+}
+
+.chart-line {
+    fill: none;
+    stroke-width: 3;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.applications-line {
+    stroke: #7c3aed;
+}
+
+.rejected-line {
+    stroke: #b91c1c;
+}
+
+.chart-point {
+    stroke-width: 2;
+}
+
+.applications-point {
+    fill: #fff;
+    stroke: #7c3aed;
+}
+
+.rejected-point {
+    fill: #fff;
+    stroke: #b91c1c;
+}
+
+.chart-legend text {
+    fill: #444;
+    font-size: 12px;
+}
+
+.legend-line {
+    stroke-width: 3;
+}
