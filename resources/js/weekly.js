@@ -10,6 +10,7 @@ function loadWeeklyReport() {
             const xml = new DOMParser().parseFromString(xmlText, "application/xml");
             if (xml.querySelector("parsererror")) throw new Error("Invalid weekly report XML");
 
+            const root = xml.documentElement;
             const applications = Array.from(xml.getElementsByTagName("application"))
                 .map(node => ({
                     applied: node.getAttribute("applied"),
@@ -18,6 +19,9 @@ function loadWeeklyReport() {
                 .filter(app => /^\d{4}-\d{2}-\d{2}$/.test(app.applied));
 
             const data = buildWeeklyData(applications);
+            data.totalApplications = Number(root.getAttribute("total")) || applications.length;
+            data.totalRejected = Number(root.getAttribute("rejected")) || 0;
+
             renderSummary(data);
             renderChart(data.weeks);
             renderTable(data.weeks);
@@ -128,7 +132,6 @@ function renderChart(weeks) {
         `${i === 0 ? "M" : "L"} ${x(i).toFixed(1)} ${y(w[key]).toFixed(1)}`
     ).join(" ");
 
-    // Build the SVG as an SVG document before inserting it into the XHTML page.
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="weekly-svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="weekly-chart-title">
         <title id="weekly-chart-title">Cumulative weekly application and rejection trends</title>
         <text class="chart-title" x="${width / 2}" y="25" text-anchor="middle">Cumulative Application &amp; Rejection Trends</text>`;
@@ -144,7 +147,6 @@ function renderChart(weeks) {
 
     svgMarkup += `<line class="chart-axis" x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${width - margin.right}" y2="${margin.top + plotHeight}"/>`;
     svgMarkup += `<text class="chart-y-title" transform="translate(18 ${margin.top + plotHeight / 2}) rotate(-90)" text-anchor="middle">Cumulative Applications</text>`;
-
     svgMarkup += `<path class="chart-line applications-line" d="${linePath("cumulativeApplications")}"/>`;
     svgMarkup += `<path class="chart-line rejected-line" d="${linePath("cumulativeRejected")}"/>`;
 
