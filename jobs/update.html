@@ -1,9 +1,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Job Application Entry</title>
-    <link rel="stylesheet" type="text/css" href="./resources/css/styles.css"/>
+    <link rel="stylesheet" type="text/css" href="./resources/css/styles.css" />
 </head>
 
 <body>
@@ -13,32 +13,32 @@
 
     <form id="jobForm" action="./resources/xql/update.xql" method="post">
         <div class="field">
-            <input id="record" name="record" type="hidden" value=""/>
-            <div class="error" id="recordError"/>
+            <input id="record" name="record" type="hidden" value="" />
+            <div class="error" id="recordError"></div>
         </div>
 
         <div class="grid">
             <div class="field">
                 <label for="companyName">Company Name</label>
-                <input id="companyName" name="companyName" type="text" value="" placeholder="e.g. American Orthodontics"/>
-                <div class="error" id="companyNameError"/>
+                <input id="companyName" name="companyName" type="text" value="" placeholder="e.g. American Orthodontics" />
+                <div class="error" id="companyNameError"></div>
             </div>
 
             <div class="field">
                 <label for="jobTitle">Job Title</label>
-                <input id="jobTitle" name="jobTitle" type="text" value="" placeholder="e.g. Data Integration Analyst"/>
-                <div class="error" id="jobTitleError"/>
+                <input id="jobTitle" name="jobTitle" type="text" value="" placeholder="e.g. Data Integration Analyst" />
+                <div class="error" id="jobTitleError"></div>
             </div>
 
             <div class="field full">
                 <label for="url">URL</label>
-                <input id="url" name="url" type="text" value="" placeholder="https://..."/>
-                <div class="error" id="urlError"/>
+                <input id="url" name="url" type="text" value="" placeholder="https://..." />
+                <div class="error" id="urlError"></div>
             </div>
 
             <div class="field">
                 <label for="dateApplied">Date Applied</label>
-                <input id="dateApplied" name="dateApplied" type="date" value=""/>
+                <input id="dateApplied" name="dateApplied" type="date" value="" />
             </div>
 
             <div class="field">
@@ -53,17 +53,17 @@
 
             <div class="field">
                 <label for="dateRejected">Date Rejected</label>
-                <input id="dateRejected" name="dateRejected" type="date" value="" disabled="disabled"/>
-                <div class="error" id="dateRejectedError"/>
+                <input id="dateRejected" name="dateRejected" type="date" value="" disabled="disabled" />
+                <div class="error" id="dateRejectedError"></div>
             </div>
 
             <div class="field">
                 <label class="spacer-label">Spacer</label>
-                <div class="error" id="dateOrderError"/>
+                <div class="error" id="dateOrderError"></div>
             </div>
         </div>
 
-        <hr/>
+        <hr />
         
         <div class="notes-header">
             <div>
@@ -73,9 +73,9 @@
             <button class="btn" type="button" id="addContactBtn">+ Add Contact</button>
         </div>
 
-        <div id="contactsContainer"/>
+        <div id="contactsContainer"></div>
 
-        <hr/>
+        <hr />
 
         <div class="notes-header">
             <div>
@@ -87,7 +87,7 @@
         </div>
 
         <!-- Notes will be injected here -->
-        <div id="notesContainer"/>
+        <div id="notesContainer"></div>
 
         <div class="footer">
             <button class="btn" type="button" id="cancelBtn">Cancel</button>
@@ -96,6 +96,6 @@
     </form>
 </div>
 
-<script type="text/javascript" src="./resources/js/entry.js"/>
+<script type="text/javascript" src="./resources/js/entry.js"></script>
 </body>
 </html>
