@@ -11,6 +11,10 @@ let $interviewNotes := count($apps/notes/note[@type = "Interview"])
 return
 <div class="container">
 
+    <div class="page-nav">
+        <a href="./weekly.html">View Weekly Trends →</a>
+    </div>
+
     <h1>Job Applications</h1>
     <p class="sub">Overview of all submitted positions.</p>
 
