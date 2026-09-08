@@ -21,20 +21,43 @@ function normalizeUrl(value) {
   return "https://" + v;
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  const parts = value.split("-");
+  if (parts.length !== 3) return value;
+  return `${parts[1]}/${parts[2]}/${parts[0]}`;
+}
+
+function notePreview(value, maxLength = 110) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text) return "No note entered";
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trimEnd() + "…";
+}
+
 // ======================================================
 // Global State
 // ======================================================
 
 const state = {
   notes: [],
-  contacts: [] // { id, name, role, mail, phone }
+  contacts: []
 };
 
 // ======================================================
 // Contacts UI
 // ======================================================
 
-function renderContacts() {
+function renderContacts(openId = null) {
   const container = document.getElementById("contactsContainer");
   if (!container) return;
 
@@ -50,50 +73,99 @@ function renderContacts() {
 
   state.contacts.forEach((c, idx) => {
     const card = document.createElement("div");
-    card.className = "card contact-card";
+    const isExpanded = c.id === openId || c.expanded === true;
+
+    card.className =
+      "card contact-card collapsible-card" +
+      (isExpanded ? " expanded" : "");
+
+    const name = escapeHtml(c.name || "Unnamed contact");
+    const role = escapeHtml(c.role || "Other");
+    const mail = escapeHtml(c.mail || "");
+    const phone = escapeHtml(c.phone || "");
+
+    const summaryContact = c.name ? escapeHtml(c.name) : "Unnamed contact";
+    const summaryRole = c.role ? escapeHtml(c.role) : "Other";
+    const contactDetails = [];
+
+    if (c.mail) contactDetails.push(escapeHtml(c.mail));
+    if (c.phone) contactDetails.push(escapeHtml(c.phone));
+
+    const summaryDetails = contactDetails.length
+      ? contactDetails.join(' <span class="separator">•</span> ')
+      : "No contact information";
 
     card.innerHTML = `
-      <div class="contact-row top">
-        <div class="field name">
-          <label>Name</label>
-          <input type="text" name="contacts[${idx}][name]" value="${c.name || ""}" placeholder="Full Name" />
+      <div class="card-summary" role="button" tabindex="0"
+           aria-expanded="${isExpanded ? "true" : "false"}">
+        <div class="card-summary-main">
+          <div class="card-summary-title">${summaryContact}</div>
+          <div class="card-summary-detail">
+            <span>${summaryRole}</span>
+            <span class="separator">•</span>
+            <span>${summaryDetails}</span>
+          </div>
         </div>
-
-        <div class="field role">
-          <label>Role</label>
-          <select name="contacts[${idx}][role]">
-            <option value="Recruiter" ${c.role === "Recruiter" ? "selected" : ""}>Recruiter</option>
-            <option value="Hiring Manager" ${c.role === "Hiring Manager" ? "selected" : ""}>Hiring Manager</option>
-            <option value="Referral" ${c.role === "Referral" ? "selected" : ""}>Referral</option>
-            <option value="HR" ${c.role === "HR" ? "selected" : ""}>HR/Internal</option>
-            <option value="Other" ${c.role === "Other" || !c.role ? "selected" : ""}>Other</option>
-          </select>
-        </div>
+        <div class="card-summary-arrow" aria-hidden="true">▼</div>
       </div>
 
-      <div class="contact-row bottom">
-        <div class="field">
-          <label>Email</label>
-          <input type="email" name="contacts[${idx}][mail]" value="${c.mail || ""}" placeholder="email@company.com" />
-        </div>
+      <div class="card-body">
+        <div class="card-body-inner">
+          <div class="contact-row top">
+            <div class="field name">
+              <label>Name</label>
+              <input type="text" name="contacts[${idx}][name]" value="${name}" placeholder="Full Name" />
+            </div>
+            <div class="field role">
+              <label>Role</label>
+              <select name="contacts[${idx}][role]">
+                <option value="Recruiter" ${c.role === "Recruiter" ? "selected" : ""}>Recruiter</option>
+                <option value="Hiring Manager" ${c.role === "Hiring Manager" ? "selected" : ""}>Hiring Manager</option>
+                <option value="Referral" ${c.role === "Referral" ? "selected" : ""}>Referral</option>
+                <option value="HR" ${c.role === "HR" ? "selected" : ""}>HR/Internal</option>
+                <option value="Other" ${c.role === "Other" || !c.role ? "selected" : ""}>Other</option>
+              </select>
+            </div>
+          </div>
 
-        <div class="field">
-          <label>Phone</label>
-          <input type="tel" name="contacts[${idx}][phone]" value="${c.phone || ""}" placeholder="555-555-5555" />
-        </div>
-      </div>
+          <div class="contact-row bottom">
+            <div class="field">
+              <label>Email</label>
+              <input type="email" name="contacts[${idx}][mail]" value="${mail}" placeholder="email@company.com" />
+            </div>
+            <div class="field">
+              <label>Phone</label>
+              <input type="tel" name="contacts[${idx}][phone]" value="${phone}" placeholder="555-555-5555" />
+            </div>
+          </div>
 
-      <div class="card-actions">
-        <button type="button" class="btn danger" data-remove-contact="${c.id}">
-          Remove
-        </button>
+          <div class="card-actions">
+            <button type="button" class="btn danger" data-remove-contact="${c.id}">Remove</button>
+          </div>
+        </div>
       </div>
     `;
 
     container.appendChild(card);
+    const summary = card.querySelector(".card-summary");
+
+    function toggleCard() {
+      syncContactsFromDOM();
+      c.expanded = !card.classList.contains("expanded");
+      renderContacts();
+    }
+
+    summary.addEventListener("click", toggleCard);
+    summary.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleCard();
+      }
+    });
 
     card.querySelector(`[data-remove-contact="${c.id}"]`)
-      .addEventListener("click", () => {
+      ?.addEventListener("click", event => {
+        event.stopPropagation();
         state.contacts = state.contacts.filter(x => x.id !== c.id);
         renderContacts();
       });
@@ -105,7 +177,7 @@ function syncContactsFromDOM() {
   if (!container) return;
 
   state.contacts.forEach((c, idx) => {
-    const card = container.children[idx];
+    const card = container.querySelectorAll(".contact-card")[idx];
     if (!card) return;
 
     c.name = card.querySelector(`input[name="contacts[${idx}][name]"]`)?.value || "";
@@ -117,21 +189,26 @@ function syncContactsFromDOM() {
 
 function addContact() {
   syncContactsFromDOM();
-  state.contacts.unshift({
+  state.contacts.forEach(c => { c.expanded = false; });
+
+  const newContact = {
     id: uid(),
     name: "",
     role: "Recruiter",
     mail: "",
-    phone: ""
-  });
-  renderContacts();
+    phone: "",
+    expanded: true
+  };
+
+  state.contacts.unshift(newContact);
+  renderContacts(newContact.id);
 }
 
 // ======================================================
-// Notes UI (UPDATED)
+// Notes UI
 // ======================================================
 
-function renderNotes() {
+function renderNotes(openId = null) {
   const container = document.getElementById("notesContainer");
   if (!container) return;
 
@@ -147,44 +224,81 @@ function renderNotes() {
 
   state.notes.forEach((n, idx) => {
     const card = document.createElement("div");
-    card.className = "card note-card";
+    const isExpanded = n.id === openId || n.expanded === true;
+
+    card.className =
+      "card note-card collapsible-card" +
+      (isExpanded ? " expanded" : "");
+
+    const noteType = escapeHtml(n.type || "Other");
+    const noteDate = formatDate(n.date);
+    const preview = escapeHtml(notePreview(n.note));
+    const summaryDate = noteDate || "No date";
 
     card.innerHTML = `
-      <div class="note-row top">
-        <div class="field">
-          <label>Date</label>
-          <input type="date" name="notes[${idx}][date]" value="${n.date || ""}" />
+      <div class="card-summary" role="button" tabindex="0"
+           aria-expanded="${isExpanded ? "true" : "false"}">
+        <div class="card-summary-main">
+          <div class="card-summary-title">
+            ${summaryDate} <span class="separator">•</span> ${noteType}
+          </div>
+          <div class="card-summary-detail"><span>${preview}</span></div>
         </div>
-
-        <div class="field">
-          <label>Type</label>
-          <select name="notes[${idx}][type]">
-            <option value="Initial" ${n.type === "Initial" ? "selected" : ""}>Initial</option>
-            <option value="Interview" ${n.type === "Interview" ? "selected" : ""}>Interview</option>
-            <option value="Rejection" ${n.type === "Rejection" ? "selected" : ""}>Rejection</option>
-            <option value="Other" ${n.type === "Other" || !n.type ? "selected" : ""}>Other</option>
-          </select>
-        </div>
+        <div class="card-summary-arrow" aria-hidden="true">▼</div>
       </div>
 
-      <div class="note-row bottom">
-        <div class="field">
-          <label>Note</label>
-          <textarea name="notes[${idx}][note]" placeholder="e.g. Phone screen with recruiter">${n.note || ""}</textarea>
-        </div>
-      </div>
+      <div class="card-body">
+        <div class="card-body-inner">
+          <div class="note-row top">
+            <div class="field">
+              <label>Date</label>
+              <input type="date" name="notes[${idx}][date]" value="${escapeHtml(n.date || "")}" />
+            </div>
+            <div class="field">
+              <label>Type</label>
+              <select name="notes[${idx}][type]">
+                <option value="Initial" ${n.type === "Initial" ? "selected" : ""}>Initial</option>
+                <option value="Interview" ${n.type === "Interview" ? "selected" : ""}>Interview</option>
+                <option value="Rejection" ${n.type === "Rejection" ? "selected" : ""}>Rejection</option>
+                <option value="Other" ${n.type === "Other" || !n.type ? "selected" : ""}>Other</option>
+              </select>
+            </div>
+          </div>
 
-      <div class="card-actions">
-        <button type="button" class="btn danger" data-remove-note="${n.id}">
-          Remove
-        </button>
+          <div class="note-row bottom">
+            <div class="field">
+              <label>Note</label>
+              <textarea name="notes[${idx}][note]" placeholder="e.g. Phone screen with recruiter">${escapeHtml(n.note || "")}</textarea>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button type="button" class="btn danger" data-remove-note="${n.id}">Remove</button>
+          </div>
+        </div>
       </div>
     `;
 
     container.appendChild(card);
+    const summary = card.querySelector(".card-summary");
+
+    function toggleCard() {
+      syncNotesFromDOM();
+      n.expanded = !card.classList.contains("expanded");
+      renderNotes();
+    }
+
+    summary.addEventListener("click", toggleCard);
+    summary.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleCard();
+      }
+    });
 
     card.querySelector(`[data-remove-note="${n.id}"]`)
-      .addEventListener("click", () => {
+      ?.addEventListener("click", event => {
+        event.stopPropagation();
         state.notes = state.notes.filter(x => x.id !== n.id);
         renderNotes();
       });
@@ -196,7 +310,7 @@ function syncNotesFromDOM() {
   if (!container) return;
 
   state.notes.forEach((n, idx) => {
-    const card = container.children[idx];
+    const card = container.querySelectorAll(".note-card")[idx];
     if (!card) return;
 
     n.date = card.querySelector(`input[name="notes[${idx}][date]"]`)?.value || "";
@@ -207,13 +321,18 @@ function syncNotesFromDOM() {
 
 function addNote() {
   syncNotesFromDOM();
-  state.notes.unshift({
+  state.notes.forEach(n => { n.expanded = false; });
+
+  const newNote = {
     id: uid(),
     date: todayISO(),
     type: "Other",
-    note: ""
-  });
-  renderNotes();
+    note: "",
+    expanded: true
+  };
+
+  state.notes.unshift(newNote);
+  renderNotes(newNote.id);
 }
 
 // ======================================================
@@ -224,7 +343,6 @@ function updateSaveButtonState() {
   const companyName = document.getElementById("companyName");
   const jobTitle = document.getElementById("jobTitle");
   const saveBtn = document.getElementById("saveBtn");
-
   if (!companyName || !jobTitle || !saveBtn) return;
 
   saveBtn.disabled =
@@ -235,14 +353,10 @@ function updateSaveButtonState() {
 function highlightEmptyFields() {
   const companyName = document.getElementById("companyName");
   const jobTitle = document.getElementById("jobTitle");
-
   if (!companyName || !jobTitle) return;
 
-  companyName.style.borderColor =
-    companyName.value.trim() ? "#d8d8e2" : "#b91c1c";
-
-  jobTitle.style.borderColor =
-    jobTitle.value.trim() ? "#d8d8e2" : "#b91c1c";
+  companyName.style.borderColor = companyName.value.trim() ? "#d8d8e2" : "#b91c1c";
+  jobTitle.style.borderColor = jobTitle.value.trim() ? "#d8d8e2" : "#b91c1c";
 }
 
 // ======================================================
@@ -252,16 +366,11 @@ function highlightEmptyFields() {
 function syncRejectedField() {
   const status = document.getElementById("status");
   const dateRejected = document.getElementById("dateRejected");
-
   if (!status || !dateRejected) return;
 
   const isRejected = status.value === "Rejected";
-
   dateRejected.disabled = !isRejected;
-
-  if (!isRejected) {
-    dateRejected.value = "";
-  }
+  if (!isRejected) dateRejected.value = "";
 }
 
 // ======================================================
@@ -280,43 +389,29 @@ async function populateForm() {
 
     const xml = await response.text();
     const xmlDoc = new DOMParser().parseFromString(xml, "application/xml");
-
     const job = xmlDoc.querySelector("job");
     if (!job) return;
 
-    document.getElementById("companyName").value =
-      job.querySelector("company")?.textContent.trim() || "";
-
-    document.getElementById("jobTitle").value =
-      job.querySelector("title")?.textContent.trim() || "";
-
-    document.getElementById("url").value =
-      normalizeUrl(job.querySelector("url")?.textContent || "");
+    document.getElementById("companyName").value = job.querySelector("company")?.textContent.trim() || "";
+    document.getElementById("jobTitle").value = job.querySelector("title")?.textContent.trim() || "";
+    document.getElementById("url").value = normalizeUrl(job.querySelector("url")?.textContent || "");
 
     const dates = job.querySelector("dates");
     if (dates) {
-      document.getElementById("dateApplied").value =
-        dates.getAttribute("applied") || "";
-
-      document.getElementById("dateRejected").value =
-        dates.getAttribute("rejected") || "";
+      document.getElementById("dateApplied").value = dates.getAttribute("applied") || "";
+      document.getElementById("dateRejected").value = dates.getAttribute("rejected") || "";
     }
 
     const statusEl = document.getElementById("status");
     if (statusEl) {
       const raw = job.querySelector("status")?.textContent || "";
       const normalized = raw.trim().toLowerCase();
-
-      const match = [...statusEl.options].find(
-        o => o.value.trim().toLowerCase() === normalized
-      );
-
+      const match = [...statusEl.options].find(o => o.value.trim().toLowerCase() === normalized);
       statusEl.value = match ? match.value : "Submitted";
     }
 
     syncRejectedField();
 
-    // Contacts
     state.contacts = [];
     job.querySelectorAll("contacts contact").forEach(c => {
       state.contacts.push({
@@ -328,7 +423,6 @@ async function populateForm() {
       });
     });
 
-    // Notes
     state.notes = [];
     job.querySelectorAll("notes note").forEach(n => {
       state.notes.push({
@@ -343,7 +437,6 @@ async function populateForm() {
     renderNotes();
     updateSaveButtonState();
     highlightEmptyFields();
-
   } catch (err) {
     console.error("Failed to populate form:", err);
   }
@@ -361,9 +454,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("status");
 
   const recordParam = getParam("record");
-  if (recordParam && recordEl) {
-    recordEl.value = recordParam;
-  }
+  if (recordParam && recordEl) recordEl.value = recordParam;
 
   addNoteBtn?.addEventListener("click", addNote);
   addContactBtn?.addEventListener("click", addContact);
@@ -388,6 +479,5 @@ window.addEventListener("DOMContentLoaded", () => {
   syncRejectedField();
   updateSaveButtonState();
   highlightEmptyFields();
-
   populateForm();
 });
