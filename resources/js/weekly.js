@@ -116,19 +116,25 @@ function renderChart(weeks) {
         return;
     }
 
+    // Keep the chart focused on the latest eight calendar months while preserving
+    // cumulative totals calculated from the complete history.
+    const monthKeys = [...new Set(weeks.map(w => w.week.substring(0, 7)))];
+    const visibleMonthKeys = monthKeys.slice(-8);
+    const visibleWeeks = weeks.filter(w => visibleMonthKeys.includes(w.week.substring(0, 7)));
+
     const width = 1000;
     const height = 500;
     const margin = { top: 45, right: 40, bottom: 90, left: 65 };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
-    const maxValue = Math.max(1, ...weeks.map(w => Math.max(w.cumulativeApplications, w.cumulativeRejected)));
+    const maxValue = Math.max(1, ...visibleWeeks.map(w => Math.max(w.cumulativeApplications, w.cumulativeRejected)));
     const yMax = Math.max(5, Math.ceil(maxValue / 5) * 5);
 
-    const x = i => weeks.length === 1
+    const x = i => visibleWeeks.length === 1
         ? margin.left + plotWidth / 2
-        : margin.left + (i / (weeks.length - 1)) * plotWidth;
+        : margin.left + (i / (visibleWeeks.length - 1)) * plotWidth;
     const y = value => margin.top + plotHeight - (value / yMax) * plotHeight;
-    const linePath = key => weeks.map((w, i) =>
+    const linePath = key => visibleWeeks.map((w, i) =>
         `${i === 0 ? "M" : "L"} ${x(i).toFixed(1)} ${y(w[key]).toFixed(1)}`
     ).join(" ");
 
@@ -148,24 +154,37 @@ function renderChart(weeks) {
     svgMarkup += `<line class="chart-axis" x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${width - margin.right}" y2="${margin.top + plotHeight}"/>`;
     svgMarkup += `<text class="chart-y-title" transform="translate(18 ${margin.top + plotHeight / 2}) rotate(-90)" text-anchor="middle">Cumulative Applications</text>`;
 
-    // Add vertical separators at the first week of each month.
-    weeks.forEach((w, i) => {
-        if (i === 0 || w.week.substring(0, 7) !== weeks[i - 1].week.substring(0, 7)) {
-            svgMarkup += `<line class="chart-month-separator" x1="${x(i)}" y1="${margin.top}" x2="${x(i)}" y2="${margin.top + plotHeight}"/>`;
+    // Find the first plotted week for each visible month. These become the
+    // vertical boundaries used to visually separate months.
+    const monthStarts = [];
+    visibleWeeks.forEach((w, i) => {
+        if (i === 0 || w.week.substring(0, 7) !== visibleWeeks[i - 1].week.substring(0, 7)) {
+            monthStarts.push({ index: i, month: w.week.substring(0, 7), label: formatMonth(w.week) });
         }
+    });
+
+    // Draw the month separators first so the trend lines remain visually prominent.
+    monthStarts.forEach(start => {
+        svgMarkup += `<line class="chart-month-separator" x1="${x(start.index)}" y1="${margin.top}" x2="${x(start.index)}" y2="${margin.top + plotHeight}"/>`;
     });
 
     svgMarkup += `<path class="chart-line applications-line" d="${linePath("cumulativeApplications")}"/>`;
     svgMarkup += `<path class="chart-line rejected-line" d="${linePath("cumulativeRejected")}"/>`;
 
-    weeks.forEach((w, i) => {
-        // Show one label per month, using the month/year of the first plotted week.
-        const isFirstWeekOfMonth = i === 0 || w.week.substring(0, 7) !== weeks[i - 1].week.substring(0, 7);
-        if (isFirstWeekOfMonth) {
-            svgMarkup += `<text class="chart-x-label" x="${x(i)}" y="${height - 45}" text-anchor="start">${formatMonth(w.week)}</text>`;
-        }
+    visibleWeeks.forEach((w, i) => {
         svgMarkup += `<circle class="chart-point applications-point" cx="${x(i)}" cy="${y(w.cumulativeApplications)}" r="4"><title>${formatWeek(w.week)}: ${w.cumulativeApplications} cumulative applications</title></circle>`;
         svgMarkup += `<circle class="chart-point rejected-point" cx="${x(i)}" cy="${y(w.cumulativeRejected)}" r="4"><title>${formatWeek(w.week)}: ${w.cumulativeRejected} cumulative rejected</title></circle>`;
+    });
+
+    // Center each month label between its left boundary and the next boundary.
+    // The final month is centered between its start boundary and the right edge.
+    monthStarts.forEach((start, i) => {
+        const leftX = x(start.index);
+        const rightX = i < monthStarts.length - 1
+            ? x(monthStarts[i + 1].index)
+            : margin.left + plotWidth;
+        const labelX = (leftX + rightX) / 2;
+        svgMarkup += `<text class="chart-x-label" x="${labelX.toFixed(1)}" y="${height - 45}" text-anchor="middle">${start.label}</text>`;
     });
 
     svgMarkup += `<g class="chart-legend">
