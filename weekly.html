@@ -1,0 +1,24 @@
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+    <head>
+        <meta charset="UTF-8"/>
+        <title>Weekly Application Trends</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <link rel="stylesheet" href="./resources/css/styles.css"/>
+        <link rel="stylesheet" href="./resources/css/weekly.css"/>
+    </head>
+    <body>
+        <div class="container">
+            <div class="page-nav">
+                <a href="./index.html">← Applications</a>
+            </div>
+            <h1>Weekly Application Trends</h1>
+            <p class="sub">Applications submitted each week compared with applications currently marked Rejected.</p>
+            <div id="weekly-summary" class="summary-grid"></div>
+            <div id="weekly-chart" class="weekly-chart" aria-label="Line chart showing weekly applications and rejected applications">
+                <div class="loading">Loading chart...</div>
+            </div>
+            <div id="weekly-table" class="table-wrapper"></div>
+        </div>
+        <script src="./resources/js/weekly.js"></script>
+    </body>
+</html>
