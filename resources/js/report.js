@@ -43,8 +43,10 @@ function populateCompanyFilter() {
   // Clear existing (except "All")
   select.length = 1;
 
-  // Sort alphabetically
-  const sortedCompanies = Array.from(companies).sort();
+  // Sort alphabetically, ignoring case.
+  const sortedCompanies = Array.from(companies).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" })
+  );
 
   sortedCompanies.forEach(company => {
     const option = document.createElement("option");

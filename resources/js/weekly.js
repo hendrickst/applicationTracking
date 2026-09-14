@@ -14,9 +14,13 @@ function loadWeeklyReport() {
             const applications = Array.from(xml.getElementsByTagName("application"))
                 .map(node => ({
                     applied: node.getAttribute("applied"),
+                    rejected: node.getAttribute("rejected"),
                     status: node.getAttribute("status") || ""
                 }))
-                .filter(app => /^\d{4}-\d{2}-\d{2}$/.test(app.applied));
+                .filter(app =>
+                    /^\d{4}-\d{2}-\d{2}$/.test(app.applied) ||
+                    /^\d{4}-\d{2}-\d{2}$/.test(app.rejected)
+                );
 
             const data = buildWeeklyData(applications);
             data.totalApplications = Number(root.getAttribute("total")) || applications.length;
@@ -40,19 +44,28 @@ function buildWeeklyData(applications) {
     let minWeek = null;
     let maxWeek = null;
 
-    applications.forEach(app => {
-        const date = parseLocalDate(app.applied);
+    const ensureWeek = date => {
         const week = getMonday(date);
         const key = dateKey(week);
-
         if (!weekly.has(key)) weekly.set(key, { week: key, applications: 0, rejected: 0 });
-        const entry = weekly.get(key);
-        entry.applications += 1;
-        if (app.status.trim() === "Rejected") entry.rejected += 1;
-
         if (!minWeek || week < minWeek) minWeek = week;
         if (!maxWeek || week > maxWeek) maxWeek = week;
+        return weekly.get(key);
+    };
+
+    applications.forEach(app => {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(app.applied)) {
+            const entry = ensureWeek(parseLocalDate(app.applied));
+            entry.applications += 1;
+        }
+
+        if (app.status.trim() === "Rejected" && /^\d{4}-\d{2}-\d{2}$/.test(app.rejected)) {
+            const entry = ensureWeek(parseLocalDate(app.rejected));
+            entry.rejected += 1;
+        }
     });
+
+    if (!minWeek || !maxWeek) return { weeks: [], totalApplications: 0, totalRejected: 0 };
 
     const weeks = [];
     let cumulativeApplications = 0;
@@ -76,8 +89,8 @@ function buildWeeklyData(applications) {
 
     return {
         weeks,
-        totalApplications: applications.length,
-        totalRejected: applications.filter(app => app.status.trim() === "Rejected").length
+        totalApplications: applications.filter(app => /^\d{4}-\d{2}-\d{2}$/.test(app.applied)).length,
+        totalRejected: applications.filter(app => app.status.trim() === "Rejected" && /^\d{4}-\d{2}-\d{2}$/.test(app.rejected)).length
     };
 }
 
