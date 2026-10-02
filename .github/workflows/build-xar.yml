@@ -32,3 +32,5 @@ jobs:
           path: applicationTracking.xar
           if-no-files-found: error
           retention-days: 30
+
+# Package artifact is intentionally built from the branch tip.
