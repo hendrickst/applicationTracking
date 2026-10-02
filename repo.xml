@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta xmlns="http://exist-db.org/xquery/repo">
+    <description>Trevor's job application tracking application</description>
+    <author>Trevor Hendricks</author>
+    <status>stable</status>
+    <type>application</type>
+    <target>jobs</target>
+    <finish>post-install.xql</finish>
+</meta>
