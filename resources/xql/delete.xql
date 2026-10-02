@@ -18,22 +18,30 @@ declare function local:delete() {
         else ()
     let $file := string($document/@file)
     return
-        if (not($safeRecord) or not($safeType) or not($job) or not($document)) then
+        if (not($safeRecord)) then
+            (response:set-status-code(400),
+             <result success="false" error="invalid-record"/>)
+        else if (not($safeType)) then
+            (response:set-status-code(400),
+             <result success="false" error="invalid-type"/>)
+        else if (not($job)) then
             (response:set-status-code(404),
-             <result success="false" error="not-found"/>)
+             <result success="false" error="record-not-found"/>)
+        else if (not($document)) then
+            (response:set-status-code(404),
+             <result success="false" error="document-not-found"/>)
         else
+            let $binaryExists := $file and util:binary-doc-available($collection || "/" || $file)
             let $removeBinary :=
-                if ($file and util:binary-doc-available($collection || "/" || $file))
-                then xmldb:remove($collection, $file)
+                if ($binaryExists) then
+                    xmldb:remove($collection, $file)
                 else ()
-            let $remaining :=
-                if ($type = "resume") then $job/documents/jobPosting
-                else $job/documents/resume
-            let $newDocuments := <documents>{$remaining}</documents>
-            let $replace := update replace $job/documents with $newDocuments
+            let $removeMetadata := update delete $document
             return
-                <result success="true" type="{$type}" fileRemoved="{exists($removeBinary)}"/>
-
+                <result
+                    success="true"
+                    type="{$type}"
+                    binaryRemoved="{if ($binaryExists) then 'true' else 'false'}"/>
 };
 
 system:as-user($tsh:adminUser, $tsh:adminPassword, local:delete())
