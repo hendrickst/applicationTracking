@@ -32,9 +32,7 @@ try {
         Where-Object { $_.Name -notin @(".git") } |
         Copy-Item -Destination $staging -Recurse -Force
 
-    Push-Location $staging
     Compress-Archive -Path (Join-Path $staging "*") -DestinationPath $tempZip -Force
-    Pop-Location
 
     Move-Item -LiteralPath $tempZip -Destination $outputPath -Force
 
