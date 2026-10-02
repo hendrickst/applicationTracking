@@ -5,5 +5,4 @@
          version="1.0.0"
          spec="1.0">
     <title>Job Application Tracking</title>
-    <dependency processor="http://exist-db.org" semver-min="6.0.0"/>
 </package>
