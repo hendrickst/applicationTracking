@@ -3,6 +3,9 @@ import module namespace tsh="tsh" at "./config.xql";
 
 declare variable $record := req:parameter('record');
 
-for $f in collection($tsh:working)[.//@id = $record][1]
+let $path := $tsh:working || '/' || $record || '/application.xml'
 return
-    $f
+    if ($record and doc-available($path)) then
+        doc($path)
+    else
+        ()
