@@ -339,36 +339,12 @@ function addNote() {
 // Documents UI
 // ======================================================
 
-function renderDocuments(job) {
+function renderDocumentsFromRows(rows, record) {
   const container = document.getElementById("documentsContainer");
   if (!container) return;
 
   container.innerHTML = "";
 
-  const documents = job.querySelector("documents");
-  if (!documents) return;
-
-  const rows = [];
-  const resume = documents.querySelector("resume");
-  const posting = documents.querySelector("jobPosting");
-
-  if (resume) {
-    rows.push({
-      label: "Resume",
-      type: "resume",
-      name: resume.getAttribute("originalName") || resume.getAttribute("file") || "Resume"
-    });
-  }
-
-  if (posting) {
-    rows.push({
-      label: "Job Posting PDF",
-      type: "jobPosting",
-      name: posting.getAttribute("originalName") || posting.getAttribute("file") || "Job Posting PDF"
-    });
-  }
-
-  const record = getParam("record");
   rows.forEach(doc => {
     const row = document.createElement("div");
     row.className = "card";
@@ -378,11 +354,79 @@ function renderDocuments(job) {
           <div class="card-summary-title">${escapeHtml(doc.label)}</div>
           <div class="card-summary-detail">${escapeHtml(doc.name)}</div>
         </div>
-        <a class="btn" href="./resources/xql/download.xql?record=${encodeURIComponent(record)}&amp;type=${encodeURIComponent(doc.type)}" target="_blank" rel="noopener">Open</a>
+        <div class="card-actions">
+          <a class="btn" href="./resources/xql/download.xql?record=${encodeURIComponent(record)}&amp;type=${encodeURIComponent(doc.type)}" target="_blank" rel="noopener">Open</a>
+          <button type="button" class="btn danger" data-delete-document="${escapeHtml(doc.type)}">Delete</button>
+        </div>
       </div>
     `;
     container.appendChild(row);
+
+    row.querySelector("[data-delete-document]")?.addEventListener("click", async () => {
+      if (!confirm(`Delete the stored ${doc.label.toLowerCase()}? This cannot be undone.`)) return;
+
+      const button = row.querySelector("[data-delete-document]");
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Deleting…";
+      }
+
+      try {
+        const response = await fetch("./resources/xql/delete.xql", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ record, type: doc.type })
+        });
+
+        const responseText = await response.text();
+        if (!response.ok) throw new Error(responseText || `HTTP ${response.status}`);
+
+        const xml = new DOMParser().parseFromString(responseText, "application/xml");
+        const result = xml.querySelector("result");
+        if (result?.getAttribute("success") !== "true") {
+          throw new Error("The document could not be deleted.");
+        }
+
+        renderDocumentsFromRows(rows.filter(item => item.type !== doc.type), record);
+      } catch (err) {
+        console.error("Failed to delete document:", err);
+        alert("The document could not be deleted. Please try again.");
+        if (button) {
+          button.disabled = false;
+          button.textContent = "Delete";
+        }
+      }
+    });
   });
+}
+
+function renderDocuments(job) {
+  const documents = job.querySelector("documents");
+  const record = getParam("record");
+  const rows = [];
+
+  if (documents) {
+    const resume = documents.querySelector("resume");
+    const posting = documents.querySelector("jobPosting");
+
+    if (resume) {
+      rows.push({
+        label: "Resume",
+        type: "resume",
+        name: resume.getAttribute("originalName") || resume.getAttribute("file") || "Resume"
+      });
+    }
+
+    if (posting) {
+      rows.push({
+        label: "Job Posting PDF",
+        type: "jobPosting",
+        name: posting.getAttribute("originalName") || posting.getAttribute("file") || "Job Posting PDF"
+      });
+    }
+  }
+
+  renderDocumentsFromRows(rows, record);
 }
 
 function showDocumentError() {
