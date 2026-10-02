@@ -336,6 +336,69 @@ function addNote() {
 }
 
 // ======================================================
+// Documents UI
+// ======================================================
+
+function renderDocuments(job) {
+  const container = document.getElementById("documentsContainer");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const documents = job.querySelector("documents");
+  if (!documents) return;
+
+  const rows = [];
+  const resume = documents.querySelector("resume");
+  const posting = documents.querySelector("jobPosting");
+
+  if (resume) {
+    rows.push({
+      label: "Resume",
+      type: "resume",
+      name: resume.getAttribute("originalName") || resume.getAttribute("file") || "Resume"
+    });
+  }
+
+  if (posting) {
+    rows.push({
+      label: "Job Posting PDF",
+      type: "jobPosting",
+      name: posting.getAttribute("originalName") || posting.getAttribute("file") || "Job Posting PDF"
+    });
+  }
+
+  const record = getParam("record");
+  rows.forEach(doc => {
+    const row = document.createElement("div");
+    row.className = "card";
+    row.innerHTML = `
+      <div class="card-summary">
+        <div class="card-summary-main">
+          <div class="card-summary-title">${escapeHtml(doc.label)}</div>
+          <div class="card-summary-detail">${escapeHtml(doc.name)}</div>
+        </div>
+        <a class="btn" href="./resources/xql/download.xql?record=${encodeURIComponent(record)}&amp;type=${encodeURIComponent(doc.type)}" target="_blank" rel="noopener">Open</a>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function showDocumentError() {
+  const error = getParam("error");
+  const container = document.getElementById("documentError");
+  if (!container || !error) return;
+
+  const messages = {
+    resume: "The resume must be a PDF, DOC, or DOCX file.",
+    posting: "The job posting must be a PDF file."
+  };
+
+  container.textContent = messages[error] || "The document could not be uploaded.";
+}
+
+// ======================================================
 // Validation
 // ======================================================
 
@@ -433,6 +496,7 @@ async function populateForm() {
       });
     });
 
+    renderDocuments(job);
     renderContacts();
     renderNotes();
     updateSaveButtonState();
@@ -479,5 +543,6 @@ window.addEventListener("DOMContentLoaded", () => {
   syncRejectedField();
   updateSaveButtonState();
   highlightEmptyFields();
+  showDocumentError();
   populateForm();
 });
