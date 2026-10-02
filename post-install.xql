@@ -38,10 +38,20 @@ declare function local:migrate-legacy() {
                 let $verified := exists($doc/job) and exists($doc/job/documents)
                 return
                     <record id="{$id}" created="{$created}" copied="{$copied}" verified="{$verified}"/>
+            let $allVerified := every $result in $results satisfies xs:boolean($result/@verified)
+            let $removed :=
+                if ($allVerified) then (
+                    for $resource in $resources
+                    return xmldb:remove($legacy, $resource),
+                    xmldb:remove($legacy),
+                    true()
+                )
+                else false()
             return
                 <migration source="{$legacy}"
                            migrated="{count($results[@verified = 'true'])}"
-                           total="{count($results)}">
+                           total="{count($results)}"
+                           removed="{$removed}">
                     {$results}
                 </migration>
 };
