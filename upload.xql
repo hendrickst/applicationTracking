@@ -5,7 +5,7 @@ import module namespace xmldb="http://exist-db.org/xquery/xmldb";
 import module namespace util="http://exist-db.org/xquery/util";
 
 (: 1. Define target collection :)
-declare variable $targetCollection := "/db/jobs/applications/";
+declare variable $targetCollection := "/db/jobs";
 
 (: 2. Your Parent XML dataset (Simplified for this run) :)
 declare variable $bulkJobs := 
@@ -1827,8 +1827,6 @@ declare variable $bulkJobs :=
 
 
 (: 3. Store each imported job in its own collection under /db/jobs :)
-declare variable $targetCollection := "/db/jobs";
-
 for $job in $bulkJobs/job
     let $uid := util:uuid()
     let $collection := concat($targetCollection, "/", $uid)
