@@ -1,7 +1,14 @@
 xquery version "3.1";
 
+import module namespace xmldb="http://exist-db.org/xquery/xmldb";
+
+(: Return each application.xml exactly once. eXist-db's collection()
+   may include descendant collections, so recursive collection() calls
+   can double-count records. :)
 declare function local:jobs($collection as xs:string) as element(job)* {
-    let $here := collection($collection)/job
+    let $here :=
+        for $resource in xmldb:get-child-resources($collection)[. = "application.xml"]
+        return doc(concat($collection, "/", $resource))/job
     let $children := xmldb:get-child-collections($collection)
     return (
         $here,
