@@ -407,13 +407,14 @@ function renderDocumentsFromRows(rows, record) {
         const xml = new DOMParser().parseFromString(responseText, "application/xml");
         const result = xml.querySelector("result");
         if (result?.getAttribute("success") !== "true") {
-          throw new Error("The document could not be deleted.");
+          const errorCode = result?.getAttribute("error") || "unknown";
+          throw new Error(`The document could not be deleted (${errorCode}).`);
         }
 
         renderDocumentsFromRows(rows.filter(item => item.type !== doc.type), record);
       } catch (err) {
         console.error("Failed to delete document:", err);
-        alert("The document could not be deleted. Please try again.");
+        alert(err?.message || "The document could not be deleted. Please try again.");
         if (button) {
           button.disabled = false;
           button.textContent = "Delete";
