@@ -1826,26 +1826,18 @@ declare variable $bulkJobs :=
 </jobs>;
 
 
-(: 3. Ensure target collection exists :)
-let $ensureCollection := 
-    if (not(xmldb:collection-available($targetCollection))) then
-        xmldb:create-collection("/db/jobs", "applications")
-    else ()
+(: 3. Store each imported job in its own collection under /db/jobs :)
+declare variable $targetCollection := "/db/jobs";
 
-(: 4. Loop through each job and burst them :)
 for $job in $bulkJobs/job
-    (: Generate UUID :)
     let $uid := util:uuid()
-    let $filename := concat($uid, ".xml")
-    
-    (: Reconstruct element with the new ID in the @id attribute :)
-    let $processedJob := 
+    let $collection := concat($targetCollection, "/", $uid)
+    let $createCollection := xmldb:create-collection($targetCollection, $uid)
+    let $processedJob :=
         <job id="{$uid}">
             {$job/node()[not(self::attribute(id))]}
+            <documents/>
         </job>
-
-    (: Store the newly minted XML file into eXist-db :)
-    let $store := xmldb:store($targetCollection, $filename, $processedJob)
-
-    return 
-        <p>Stored: {$filename} ({$job/company/string()} - {$job/title/string()})</p>
+    let $store := xmldb:store($collection, "application.xml", $processedJob)
+    return
+        <p>Stored: {$collection}/application.xml ({$job/company/string()} - {$job/title/string()})</p>
