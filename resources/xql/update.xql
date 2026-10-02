@@ -37,18 +37,19 @@ declare function local:validPosting($filename as xs:string?) as xs:boolean {
 declare function local:storeUpload(
     $collection as xs:string,
     $param as xs:string,
-    $prefix as xs:string,
+    $elementName as xs:string,
+    $filePrefix as xs:string,
     $mime as xs:string
 ) as element()? {
     let $originalName := request:get-uploaded-file-name($param)
     let $file := request:get-uploaded-file($param)
     return
         if ($originalName and $file) then
-            let $internalName := $prefix || "-" || util:uuid() || "." || local:extension($originalName)
+            let $internalName := $filePrefix || "-" || util:uuid() || "." || local:extension($originalName)
             let $stored := xmldb:store-as-binary($collection, $internalName, $file)
             let $setMime := xmldb:set-mime-type(xs:anyURI($stored), $mime)
             return
-                element {$prefix} {
+                element {$elementName} {
                     attribute file {$internalName},
                     attribute originalName {$originalName},
                     attribute type {$mime},
@@ -87,12 +88,12 @@ declare function local:updateFile($file, $collection as xs:string){
 
     let $newResume :=
         if ($resumeName and local:validResume($resumeName)) then
-            local:storeUpload($collection, 'resumeFile', 'resume', local:resumeMime($resumeName))
+            local:storeUpload($collection, 'resumeFile', 'resume', 'resume', local:resumeMime($resumeName))
         else ()
 
     let $newPosting :=
         if ($postingName and local:validPosting($postingName)) then
-            local:storeUpload($collection, 'jobPostingFile', 'posting', 'application/pdf')
+            local:storeUpload($collection, 'jobPostingFile', 'jobPosting', 'posting', 'application/pdf')
         else ()
 
     let $documents :=
