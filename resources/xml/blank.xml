@@ -9,7 +9,7 @@
         <note date="" type=""/>
     </notes>
     <contacts>
-       <contact mail="" phone="" role=""/>
+       <contact mail="" phone="" role="" title="" socialUrl="" notes=""/>
     </contacts>
     <documents/>
 </job>
