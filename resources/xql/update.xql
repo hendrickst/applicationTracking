@@ -42,7 +42,7 @@ declare function local:storeUpload(
     $mime as xs:string
 ) as element()? {
     let $originalName := request:get-uploaded-file-name($param)
-    let $file := request:get-uploaded-file($param)
+    let $file := request:get-uploaded-file-data($param)
     return
         if ($originalName and $file) then
             let $internalName := $filePrefix || "-" || util:uuid() || "." || local:extension($originalName)
