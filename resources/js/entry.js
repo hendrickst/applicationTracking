@@ -81,8 +81,11 @@ function renderContacts(openId = null) {
 
     const name = escapeHtml(c.name || "Unnamed contact");
     const role = escapeHtml(c.role || "Other");
+    const title = escapeHtml(c.title || "");
     const mail = escapeHtml(c.mail || "");
     const phone = escapeHtml(c.phone || "");
+    const socialUrl = escapeHtml(c.socialUrl || "");
+    const personNotes = escapeHtml(c.notes || "");
 
     const summaryContact = c.name ? escapeHtml(c.name) : "Unnamed contact";
     const summaryRole = c.role ? escapeHtml(c.role) : "Other";
@@ -117,7 +120,7 @@ function renderContacts(openId = null) {
               <input type="text" name="contacts[${idx}][name]" value="${name}" placeholder="Full Name" />
             </div>
             <div class="field role">
-              <label>Role</label>
+              <label>Relationship</label>
               <select name="contacts[${idx}][role]">
                 <option value="Recruiter" ${c.role === "Recruiter" ? "selected" : ""}>Recruiter</option>
                 <option value="Hiring Manager" ${c.role === "Hiring Manager" ? "selected" : ""}>Hiring Manager</option>
@@ -130,6 +133,10 @@ function renderContacts(openId = null) {
 
           <div class="contact-row bottom">
             <div class="field">
+              <label>Title</label>
+              <input type="text" name="contacts[${idx}][title]" value="${title}" placeholder="e.g. Director of Recruiting" />
+            </div>
+            <div class="field">
               <label>Email</label>
               <input type="email" name="contacts[${idx}][mail]" value="${mail}" placeholder="email@company.com" />
             </div>
@@ -137,6 +144,16 @@ function renderContacts(openId = null) {
               <label>Phone</label>
               <input type="tel" name="contacts[${idx}][phone]" value="${phone}" placeholder="555-555-5555" />
             </div>
+          </div>
+
+          <div class="field">
+            <label>Social Media URL</label>
+            <input type="url" name="contacts[${idx}][socialUrl]" value="${socialUrl}" placeholder="https://www.linkedin.com/in/..." />
+          </div>
+
+          <div class="field">
+            <label>Notes About Person</label>
+            <textarea name="contacts[${idx}][notes]" placeholder="Optional notes about this person">${personNotes}</textarea>
           </div>
 
           <div class="card-actions">
@@ -182,8 +199,11 @@ function syncContactsFromDOM() {
 
     c.name = card.querySelector(`input[name="contacts[${idx}][name]"]`)?.value || "";
     c.role = card.querySelector(`select[name="contacts[${idx}][role]"]`)?.value || c.role;
+    c.title = card.querySelector(`input[name="contacts[${idx}][title]"]`)?.value || "";
     c.mail = card.querySelector(`input[name="contacts[${idx}][mail]"]`)?.value || "";
     c.phone = card.querySelector(`input[name="contacts[${idx}][phone]"]`)?.value || "";
+    c.socialUrl = card.querySelector(`input[name="contacts[${idx}][socialUrl]"]`)?.value || "";
+    c.notes = card.querySelector(`textarea[name="contacts[${idx}][notes]"]`)?.value || "";
   });
 }
 
@@ -195,8 +215,11 @@ function addContact() {
     id: uid(),
     name: "",
     role: "Recruiter",
+    title: "",
     mail: "",
     phone: "",
+    socialUrl: "",
+    notes: "",
     expanded: true
   };
 
@@ -525,8 +548,11 @@ async function populateForm() {
         id: uid(),
         name: c.getAttribute("name") || "",
         role: c.getAttribute("role") || "Other",
+        title: c.getAttribute("title") || "",
         mail: c.getAttribute("mail") || "",
-        phone: c.getAttribute("phone") || ""
+        phone: c.getAttribute("phone") || "",
+        socialUrl: c.getAttribute("socialUrl") || c.getAttribute("social-url") || "",
+        notes: c.getAttribute("notes") || ""
       });
     });
 
