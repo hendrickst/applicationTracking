@@ -1,7 +1,14 @@
 xquery version "3.1";
 
+import module namespace xmldb="http://exist-db.org/xquery/xmldb";
+
+(: Return only application.xml documents directly stored in each collection.
+   collection() can include descendant collections in eXist-db, so recursive
+   collection() traversal would count the same application more than once. :)
 declare function local:jobs($collection as xs:string) as element(job)* {
-    let $here := collection($collection)/job
+    let $here :=
+        for $resource in xmldb:get-child-resources($collection)[. = "application.xml"]
+        return doc(concat($collection, "/", $resource))/job
     let $children := xmldb:get-child-collections($collection)
     return (
         $here,
@@ -16,9 +23,9 @@ declare function local:jobs($collection as xs:string) as element(job)* {
 let $apps := local:jobs("/db/jobs")
 
 let $total := count($apps)
-let $submitted := count($apps[status = "Submitted"])
-let $interview := count($apps[status = "Interview"])
-let $rejected := count($apps[status = "Rejected"])
+let $submitted := count($apps[normalize-space(status) = "Submitted"])
+let $interview := count($apps[normalize-space(status) = "Interview"])
+let $rejected := count($apps[normalize-space(status) = "Rejected"])
 let $interviewNotes := count($apps/notes/note[@type = "Interview"])
 
 return
