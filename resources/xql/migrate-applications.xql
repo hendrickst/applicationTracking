@@ -32,7 +32,12 @@ declare function local:migrate() {
             let $copied :=
                 if (doc-available($target || "/application.xml")) then true()
                 else exists(xmldb:copy-resource($legacy, $resource, $target, "application.xml"))
-            let $verified := doc-available($target || "/application.xml")
+            let $document := if (doc-available($target || "/application.xml")) then doc($target || "/application.xml") else ()
+            let $addDocuments :=
+                if ($document and not($document/job/documents))
+                then update insert <documents/> into $document/job
+                else ()
+            let $verified := doc-available($target || "/application.xml") and exists(doc($target || "/application.xml")/job/documents)
             return
                 <record
                     id="{$id}"
