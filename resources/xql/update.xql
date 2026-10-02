@@ -162,8 +162,11 @@ declare function local:updateContacts($file) {
             let $mail := request:get-parameter(concat("contacts[", $i, "][mail]"), "")
             let $phone := request:get-parameter(concat("contacts[", $i, "][phone]"), "")
             let $role := request:get-parameter(concat("contacts[", $i, "][role]"), "Other")
+            let $title := request:get-parameter(concat("contacts[", $i, "][title]"), "")
+            let $socialUrl := request:get-parameter(concat("contacts[", $i, "][socialUrl]"), "")
+            let $personNotes := request:get-parameter(concat("contacts[", $i, "][notes]"), "")
             order by xs:integer($i)
-            return <contact name="{$name}" mail="{$mail}" phone="{$phone}" role="{$role}"/>
+            return <contact name="{$name}" mail="{$mail}" phone="{$phone}" role="{$role}" title="{$title}" socialUrl="{$socialUrl}" notes="{$personNotes}"/>
         }</contacts>
     return update replace $file//contacts with $builtXML
 };
