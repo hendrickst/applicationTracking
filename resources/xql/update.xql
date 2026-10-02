@@ -61,7 +61,7 @@ declare function local:storeUpload(
 declare function local:removeOldDocument($collection as xs:string, $node as element()?) {
     let $oldFile := string($node/@file)
     return
-        if ($oldFile and xmldb:exists($collection, $oldFile)) then
+        if ($oldFile and util:binary-doc-available($collection || '/' || $oldFile)) then
             xmldb:remove($collection, $oldFile)
         else
             ()
