@@ -176,9 +176,9 @@ declare function local:check() {
     let $postingName := request:get-uploaded-file-name('jobPostingFile')
     return
         if ($resumeName and not(local:validResume($resumeName))) then
-            response:redirect-to(xs:anyURI('../../update.html?record=' || $record || '&error=resume'))
+            response:redirect-to(xs:anyURI('../../update.html?record=' || $record || '&amp;error=resume'))
         else if ($postingName and not(local:validPosting($postingName))) then
-            response:redirect-to(xs:anyURI('../../update.html?record=' || $record || '&error=posting'))
+            response:redirect-to(xs:anyURI('../../update.html?record=' || $record || '&amp;error=posting'))
         else if ($record) then
             let $collection := $tsh:working || '/' || $record
             let $file := doc($collection || '/application.xml')
