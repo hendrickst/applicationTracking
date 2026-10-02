@@ -6,7 +6,10 @@ declare function local:jobs($collection as xs:string) as element(job)* {
     return (
         $here,
         for $child in $children
-        return local:jobs($child)
+        let $childPath :=
+            if (starts-with($child, "/")) then $child
+            else concat($collection, "/", $child)
+        return local:jobs($childPath)
     )
 };
 
