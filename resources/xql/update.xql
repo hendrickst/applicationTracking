@@ -54,7 +54,9 @@ declare function local:storeUpload(
                     attribute originalName {$originalName},
                     attribute type {$mime},
                     attribute uploaded {string(current-date())},
-                    attribute captured {if ($elementName = "jobPosting") then string(current-date()) else ()}
+                    if ($elementName = "jobPosting") then
+                        attribute captured {string(current-date())}
+                    else ()
                 }
         else
             ()
