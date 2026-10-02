@@ -1,6 +1,6 @@
 xquery version "3.1";
 
-let $apps := collection("/db/jobs/applications")/job
+let $apps := collection("/db/jobs")/job
 
 let $total := count($apps)
 let $submitted := count($apps[status = "Submitted"])
