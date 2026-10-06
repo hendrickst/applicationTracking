@@ -42,7 +42,7 @@ declare function local:docs($f as node()) {
  let $deleted:=if($count > 0) then for $i in 0 to ($count - 1) return request:get-parameter("documentDelete["||$i||"]","")
  let $_:=for $name in $deleted where $name and xmldb:resource-exists(local:col(),$name) return xmldb:remove(local:col(),$name)
  let $keep:=$existing[not(@storedName=$deleted)]
- let $new:=for $i in 0 to $count - 1 return local:upload(xs:string($i),local:param("documentType["||$i||"]"))
+ let $new:=if($count > 0) then for $i in 0 to ($count - 1) return local:upload(xs:string($i),local:param("documentType["||$i||"]")) else ()
  let $x:=<documents>{$keep,$new}</documents>
  return update replace $f//documents with $x
 };
