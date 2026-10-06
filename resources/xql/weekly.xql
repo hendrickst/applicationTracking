@@ -61,4 +61,4 @@ let $apps :=
   where exists($j/job)
   return $j/job
 
-return <weekly-data total="{count($apps)}" rejected="{count($apps[status="Rejected"])}">{for $j in $apps[dates/@applied or dates/@rejected] return <application applied="{string($j/dates/@applied)}" rejected="{string($j/dates/@rejected)}" status="{normalize-space($j/status)}"/>}</weekly-data>
+return <weekly-data total="{count($apps)}" rejected="{count($apps[status="Rejected"])}">{for $j in $apps[dates/@applied or dates/@rejected] return <application applied="{string($j/dates/@applied)}" rejected="{string($j/dates/@rejected)}" status="{normalize-space($j/status/text())}"/>}</weekly-data>
