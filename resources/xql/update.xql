@@ -13,7 +13,7 @@ declare function local:upload($i as xs:string,$type as xs:string) as element()? 
  let $n:=request:get-uploaded-file-name($p)
  let $d:=request:get-uploaded-file-data($p)
  let $e:=local:ext($n)
- return if($n and $d and $e) then
+ return if($n and exists($d) and string-length($e) gt 0) then
    let $s:=lower-case($type)||"-"||util:uuid()||"."||$e
    let $path:=xmldb:store-as-binary(local:col(),$s,$d)
    let $mime:=if($e="pdf") then "application/pdf" else if($e="doc") then "application/msword" else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
