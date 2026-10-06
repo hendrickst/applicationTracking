@@ -5,10 +5,10 @@ declare variable $old := $base || "/applications";
 if (xmldb:collection-available($old)) then
   let $_ := for $name in xmldb:get-child-resources($old)
             where ends-with($name,".xml")
-            let $id := replace($name,"\.xml$","")
+            let $id := replace($name,"\\.xml$","")
             let $c := $base || "/" || $id
             let $_c := if(xmldb:collection-available($c)) then () else xmldb:create-collection($base,$id)
-            let $_x := if(not(xmldb:resource-exists($c,$name))) then xmldb:copy-resource($old,$name,$c,$name) else ()
+            let $_x := if(not(doc-available($c||"/"||$name))) then xmldb:copy-resource($old,$name,$c,$name) else ()
             return ()
   let $_remove := xmldb:remove($old)
   return ()
