@@ -1,16 +1,5 @@
 xquery version "3.1";
-
-let $apps := collection("/db/jobs/applications")/job
-let $total := count($apps)
-let $rejected := count($apps[normalize-space(status) = "Rejected"])
-return
-    <weekly-data total="{$total}" rejected="{$rejected}">
-        {
-            for $job in $apps[dates/@applied or dates/@rejected]
-            return
-                <application
-                    applied="{string($job/dates/@applied)}"
-                    rejected="{string($job/dates/@rejected)}"
-                    status="{normalize-space(string($job/status))}"/>
-        }
-    </weekly-data>
+import module namespace xmldb="http://exist-db.org/xquery/xmldb";
+declare variable $base := "/db/jobs";
+let $apps := for $id in xmldb:get-child-collections($base) let $j:=doc($base||"/"||$id||"/"||$id||".xml") where exists($j/job) return $j/job
+return <weekly-data total="{count($apps)}" rejected="{count($apps[status="Rejected"])}">{for $j in $apps[dates/@applied or dates/@rejected] return <application applied="{string($j/dates/@applied)}" rejected="{string($j/dates/@rejected)}" status="{normalize-space($j/status)}"/>}</weekly-data>
