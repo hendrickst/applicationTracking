@@ -31,7 +31,7 @@ declare function local:contacts($f as node()) {
 
 declare function local:notes($f as node()) {
  let $count:=xs:integer(request:get-parameter("noteCount","0"))
- let $x:=<notes>{if($count > 0) then for $i in 0 to ($count - 1) return <note date="{local:param('notes['||$i||'][date]')}" type="{local:param('notes['||$i||'][type]')}">{local:param('notes['||$i||'][note]')}</note>}</notes> else ()}</notes>
+ let $x:=<notes>{if($count > 0) then for $i in 0 to ($count - 1) return <note date="{local:param('notes['||$i||'][date]')}" type="{local:param('notes['||$i||'][type]')}">{local:param('notes['||$i||'][note]')}</note> else ()}</notes>
  return update replace $f//notes with $x
 };
 
