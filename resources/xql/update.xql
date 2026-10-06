@@ -27,13 +27,13 @@ declare function local:contacts($f as node()) {
  let $count:=xs:integer(request:get-parameter("contactCount","0"))
  let $x:=<contacts>{if($count > 0) then for $i in 0 to ($count - 1) return
    <contact name="{local:param('contacts['||$i||'][name]')}" mail="{local:param('contacts['||$i||'][mail]')}" phone="{local:param('contacts['||$i||'][phone]')}" role="{local:param('contacts['||$i||'][role]')}" linkedin="{local:param('contacts['||$i||'][linkedin]')}"><notes>{local:param('contacts['||$i||'][notes]')}</notes></contact> else ()}</contacts>
- return update replace $f//contacts with $x
+ return update replace $f/job/contacts with $x
 };
 
 declare function local:notes($f as node()) {
  let $count:=xs:integer(request:get-parameter("noteCount","0"))
  let $x:=<notes>{if($count > 0) then for $i in 0 to ($count - 1) return <note date="{local:param('notes['||$i||'][date]')}" type="{local:param('notes['||$i||'][type]')}">{local:param('notes['||$i||'][note]')}</note> else ()}</notes>
- return update replace $f//notes with $x
+ return update replace $f/job/notes with $x
 };
 
 declare function local:docs($f as node()) {
