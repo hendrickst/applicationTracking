@@ -15,3 +15,6 @@ hr{margin:28px 0 16px;border-top:2px solid #dedee8}.section-header{padding:14px 
 /* Final section-header spacing */
 .section-header{padding-top:20px;padding-bottom:14px}
 .section-header h2{margin-bottom:4px}
+
+/* Add horizontal padding to section headings */
+.section-header{padding-left:16px;padding-right:16px}
