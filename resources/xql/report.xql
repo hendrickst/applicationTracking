@@ -4,23 +4,54 @@ import module namespace xmldb="http://exist-db.org/xquery/xmldb";
 declare variable $base := "/db/jobs";
 declare variable $legacy := $base || "/applications";
 
-(: Recover/migrate the legacy flat collection if the package install hook did not run. :)
-let $_migration :=
-    if (xmldb:collection-available($legacy)) then
-        (
-            for $name in xmldb:get-child-resources($legacy)
-            where ends-with($name, ".xml")
-            let $id := replace($name, "\\.xml$", "")
-            let $c := $base || "/" || $id
-            let $_c := if (xmldb:collection-available($c)) then () else xmldb:create-collection($base, $id)
-            let $_x := if (not(doc-available($c || "/" || $name))) then xmldb:copy-resource($legacy, $name, $c, $name) else ()
-            return (),
-            if (count(xmldb:get-child-resources($legacy)) = 0) then xmldb:remove($legacy) else ()
-        )
-    else ()
+declare function local:copy-resources($source as xs:string, $target as xs:string) {
+  for $name in xmldb:get-child-resources($source)
+  return
+    if ($name = xmldb:get-child-resources($target)) then ()
+    else xmldb:copy-resource($source, $name, $target, $name)
+};
+
+declare function local:migrate-collection($source as xs:string, $id as xs:string) {
+  let $target := $base || "/" || $id
+  let $_create := if (xmldb:collection-available($target)) then () else xmldb:create-collection($base, $id)
+  let $_copy := local:copy-resources($source, $target)
+  let $_remove := if (xmldb:get-child-resources($source) = ()) then xmldb:remove($source) else ()
+  return ()
+};
+
+(: Recover/migrate legacy layouts if the package install hook did not run. :)
+let $_legacy :=
+  if (xmldb:collection-available($legacy)) then
+    (
+      for $name in xmldb:get-child-resources($legacy)
+      where ends-with($name, ".xml")
+      let $id := replace($name, "\.xml$", "")
+      return local:migrate-collection($legacy, $id),
+      if (xmldb:get-child-resources($legacy) = ()) then xmldb:remove($legacy) else ()
+    )
+  else ()
+
+(: Fix collections accidentally named <UUID>.xml. :)
+let $_incorrect :=
+  for $name in xmldb:get-child-collections($base)
+  where ends-with($name, ".xml")
+  let $id := replace($name, "\.xml$", "")
+  return local:migrate-collection($base || "/" || $name, $id)
+
+(: Handle direct XML resources in /db/jobs as well. :)
+let $_direct :=
+  for $name in xmldb:get-child-resources($base)
+  where ends-with($name, ".xml")
+  let $id := replace($name, "\.xml$", "")
+  let $target := $base || "/" || $id
+  let $_create := if (xmldb:collection-available($target)) then () else xmldb:create-collection($base, $id)
+  let $_copy := if ($name = xmldb:get-child-resources($target)) then () else xmldb:copy-resource($base, $name, $target, $name)
+  let $_remove := xmldb:remove($base, $name)
+  return ()
 
 let $apps :=
     for $id in xmldb:get-child-collections($base)
+    where not(ends-with($id, ".xml"))
     let $j := doc($base || "/" || $id || "/" || $id || ".xml")
     where exists($j/job)
     return $j/job
