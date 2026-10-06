@@ -19,6 +19,14 @@ declare function local:migrate-collection($source as xs:string, $id as xs:string
   return ()
 };
 
+declare function local:migrate-resource($source as xs:string, $name as xs:string) {
+  let $id := replace($name, "\.xml$", "")
+  let $target := $base || "/" || $id
+  let $_create := if (xmldb:collection-available($target)) then () else xmldb:create-collection($base, $id)
+  let $_copy := if ($name = xmldb:get-child-resources($target)) then () else xmldb:copy-resource($source, $name, $target, $name)
+  return ()
+};
+
 (: Recover/migrate legacy layouts if the package install hook did not run. :)
 let $_legacy :=
   if (xmldb:collection-available($legacy)) then
@@ -26,7 +34,7 @@ let $_legacy :=
       for $name in xmldb:get-child-resources($legacy)
       where ends-with($name, ".xml")
       let $id := replace($name, "\.xml$", "")
-      return local:migrate-collection($legacy, $id),
+      return local:migrate-resource($legacy, $name),
       if (xmldb:get-child-resources($legacy) = ()) then xmldb:remove($legacy) else ()
     )
   else ()
