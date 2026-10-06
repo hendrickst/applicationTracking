@@ -91,13 +91,13 @@ return
         <tbody>{
             for $j in $apps
             let $id := string($j/@id)
-            let $s := normalize-space($j/status)
+            let $s := normalize-space($j/status/text())
             order by $j/dates/@applied descending
             return <tr class="{if($s = "Rejected") then "row-rejected" else if($s = "Interview") then "row-interview" else ""}">
-                <td>{$j/company}</td>
-                <td><a class="job-link" href="./update.html?record={$id}">{$j/title}</a></td>
+                <td>{$j/company/text()}</td>
+                <td><a class="job-link" href="./update.html?record={$id}">{$j/title/text()}</a></td>
                 <td class="status {$s}">{$s}</td>
-                <td>{$j/dates/@applied}</td>
+                <td>{$j/dates/@applied/string()}</td>
             </tr>
         }</tbody>
     </table>
