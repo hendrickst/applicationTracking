@@ -24,7 +24,7 @@ declare function local:upload($i as xs:string,$type as xs:string) as element()? 
 
 declare function local:contacts($f as node()) {
  let $count:=xs:integer(request:get-parameter("contactCount","0"))
- let $x:=<contacts>{for $i in 0 to $count - 1 return
+ let $x:=<contacts>{if($count > 0) then for $i in 0 to ($count - 1) return
    <contact name="{local:param('contacts['||$i||'][name]')}" mail="{local:param('contacts['||$i||'][mail]')}" phone="{local:param('contacts['||$i||'][phone]')}" role="{local:param('contacts['||$i||'][role]')}" linkedin="{local:param('contacts['||$i||'][linkedin]')}"><notes>{local:param('contacts['||$i||'][notes]')}</notes></contact>
  }</contacts>
  return update replace $f//contacts with $x
@@ -32,14 +32,14 @@ declare function local:contacts($f as node()) {
 
 declare function local:notes($f as node()) {
  let $count:=xs:integer(request:get-parameter("noteCount","0"))
- let $x:=<notes>{for $i in 0 to $count - 1 return <note date="{local:param('notes['||$i||'][date]')}" type="{local:param('notes['||$i||'][type]')}">{local:param('notes['||$i||'][note]')}</note>}</notes>
+ let $x:=<notes>{if($count > 0) then for $i in 0 to ($count - 1) return <note date="{local:param('notes['||$i||'][date]')}" type="{local:param('notes['||$i||'][type]')}">{local:param('notes['||$i||'][note]')}</note>}</notes>
  return update replace $f//notes with $x
 };
 
 declare function local:docs($f as node()) {
  let $count:=xs:integer(request:get-parameter("documentCount","0"))
  let $existing:=$f//documents/document
- let $deleted:=for $i in 0 to $count - 1 return request:get-parameter("documentDelete["||$i||"]","")
+ let $deleted:=if($count > 0) then for $i in 0 to ($count - 1) return request:get-parameter("documentDelete["||$i||"]","")
  let $_:=for $name in $deleted where $name and xmldb:resource-exists(local:col(),$name) return xmldb:remove(local:col(),$name)
  let $keep:=$existing[not(@storedName=$deleted)]
  let $new:=for $i in 0 to $count - 1 return local:upload(xs:string($i),local:param("documentType["||$i||"]"))
