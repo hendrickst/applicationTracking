@@ -12,6 +12,7 @@ function contactCard(x,i){
 }
 function renumberContacts(){document.querySelectorAll(".contact-card").forEach((d,i)=>d.querySelectorAll("input,select,textarea").forEach(el=>el.name=el.name.replace(/contacts\[\d+\]/,"contacts["+i+"]")));}
 function renderContacts(){const c=qs("#contactsContainer");c.innerHTML="";if(!state.contacts.length)c.innerHTML='<div class="card empty">No contacts yet.</div>';state.contacts.forEach((x,i)=>c.appendChild(contactCard(x,i)));}
+function notePreview(v,maxLength=110){const t=String(v??"").replace(/\s+/g," ").trim();if(!t)return "No note entered";return t.length<=maxLength?t:t.substring(0,maxLength).trimEnd()+"…";}
 function noteCard(x,i){
  const d=document.createElement("details");d.className="card note-card";
  d.innerHTML='<summary><span class="summary-title">'+esc(x.type||"Note")+'</span><span class="summary-meta">'+esc(x.date||"")+'</span></summary><div class="note-grid"><div class="field"><label>Date</label><input type="date" name="notes['+i+'][date]" value="'+esc(x.date)+'"/></div><div class="field"><label>Type</label><select name="notes['+i+'][type]"><option>Initial</option><option>Interview</option><option>Rejection</option><option>Other</option></select></div><div class="field full"><label>Note</label><textarea name="notes['+i+'][note]">'+esc(x.note)+'</textarea></div></div><div class="card-actions"><button type="button" class="btn danger remove-note">Remove</button></div>';
