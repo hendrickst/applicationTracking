@@ -2,115 +2,14 @@ xquery version "3.1";
 import module namespace tsh="tsh" at "./config.xql";
 import module namespace request="http://exist-db.org/xquery/request";
 
-
-    declare variable $uniqueID := util:uuid();
-    
-    declare variable $record := req:parameter('record');
-    declare variable $companyName := req:parameter('companyName');
-    declare variable $url := req:parameter('url');
-    declare variable $jobTitle := req:parameter('jobTitle');
-    declare variable $dateApplied := req:parameter('dateApplied');
-    declare variable $dateRejected := req:parameter('dateRejected');
-    declare variable $status := req:parameter('status');
-    declare variable $notes := req:parameter('notes');
-    
-    
-
-declare function local:check() {
-    if ($record) then
-        let $fileName := $tsh:working || '/' || $record || '.xml'
-        let $file := doc($fileName)
-        let $update := local:updateFile($file)
-        return
-            response:redirect-to(xs:anyURI('../../index.html'))
-    else
-        let $fileName := $uniqueID || ".xml"
-        let $createNew := xmldb:copy-resource($tsh:XMLPath, 'blank.xml', $tsh:working, $fileName)
-        let $file := doc($tsh:working || '/' || $fileName)
-        let $update := local:updateFile($file)
-        return
-            response:redirect-to(xs:anyURI('../../index.html'))
-};
-
-declare function local:updateFile($file){
-    let $updateRecord := if ($record) then local:update($file, '/job/@id', $record) else local:update($file, '/job/@id', $uniqueID)
-    let $updateCompany := local:update($file, '//company', $companyName)
-    let $updateUrl := local:update($file, '//url', $url)
-    let $updateTitle := local:update($file, '//title', $jobTitle)
-    let $updateDateApplied := local:update($file, '//@applied', $dateApplied)
-    let $updateDateRejected := local:update($file, '//@rejected', $dateRejected)
-    let $updateStatus := local:update($file, '//status', $status)
-    
-    let $updateContacts := local:updateContacts($file) (: <-- Save contacts :)
-    return
-        local:updateNotes($file, $notes)
-};
-
-declare function local:update($file, $xpath, $value) {
-    if ($value) then
-        let $path := util:eval-inline($file, $xpath)
-        return
-            update value $path with $value
-    else
-        ()
-};
-
-declare function local:updateNotes($file, $values) {
-
-    (: Get all parameter names. :)
-    let $params := request:get-parameter-names()
-
-    (: Extract unique note indexes :)
-    let $indexes :=
-        distinct-values(
-            for $p in $params
-            where starts-with($p, "notes[")
-            return
-                replace($p, "notes\[(\d+)\].*", "$1")
-        )
-
-    let $builtXML :=    <notes>
-                        {
-                            for $i in $indexes
-                            let $date := request:get-parameter(concat("notes[", $i, "][date]"), "")
-                            let $type := request:get-parameter(concat("notes[", $i, "][type]"), "Other") (: <-- Added :)
-                            let $note := request:get-parameter(concat("notes[", $i, "][note]"), "")
-                            order by xs:integer($i)
-                            return
-                                <note date="{$date}" type="{$type}">{string($note)}</note> (: <-- Added type attribute :)
-                        }
-                        </notes>
-    return
-        update replace $file//notes with $builtXML
-};
-
-declare function local:updateContacts($file) {
-    let $params := request:get-parameter-names()
-
-    let $indexes :=
-        distinct-values(
-            for $p in $params
-            where starts-with($p, "contacts[")
-            return
-                replace($p, "contacts\[(\d+)\].*", "$1")
-        )
-
-    let $builtXML :=    <contacts>
-                        {
-                            for $i in $indexes
-                            let $name := request:get-parameter(concat("contacts[", $i, "][name]"), "")
-                            let $mail := request:get-parameter(concat("contacts[", $i, "][mail]"), "")
-                            let $phone := request:get-parameter(concat("contacts[", $i, "][phone]"), "")
-                            let $role := request:get-parameter(concat("contacts[", $i, "][role]"), "Other") (: <-- Capture Role :)
-                            order by xs:integer($i)
-                            return
-                                <contact name="{$name}" mail="{$mail}" phone="{$phone}" role="{$role}"/> (: <-- Save as attribute :)
-                        }
-                        </contacts>
-    return
-        update replace $file//contacts with $builtXML
-};
-
-    system:as-user($tsh:adminUser, $tsh:adminPassword, local:check())
-    
-    
+declare variable $record := request:get-parameter('record','');
+declare variable $id := if ($record) then $record else util:uuid();
+declare function local:col() as xs:string {$tsh:base || '/' || $id};
+declare function local:param($n as xs:string) as xs:string {request:get-parameter($n,'')};
+declare function local:ext($n as xs:string) as xs:string {let $e:=lower-case(tokenize($n,'\.')[last()]) return if($e=('pdf','doc','docx')) then $e else ''};
+declare function local:upload($param as xs:string,$type as xs:string) as element()? {let $n:=request:get-uploaded-file-name($param) let $d:=request:get-uploaded-file-data($param) let $e:=local:ext($n) return if($n and $d and $e) then let $s:=lower-case($type)||'-'||util:uuid()||'.'||$e let $m:=request:get-uploaded-file-content-type($param) let $_:=xmldb:store(local:col(),$s,$d,$m) return <document type="{$type}" originalName="{$n}" storedName="{$s}" mimeType="{$m}"/> else ()};
+declare function local:contacts($f as node()) {let $ps:=request:get-parameter-names() let $is:=distinct-values(for $p in $ps where starts-with($p,'contacts[') return replace($p,'contacts\[(\d+)\].*','$1')) let $x:=<contacts>{for $i in $is let $n:=local:param('contacts['||$i||'][name]') let $m:=local:param('contacts['||$i||'][mail]') let $p:=local:param('contacts['||$i||'][phone]') let $r:=local:param('contacts['||$i||'][role]') let $l:=local:param('contacts['||$i||'][linkedin]') let $z:=local:param('contacts['||$i||'][notes]') order by xs:integer($i) return <contact name="{$n}" mail="{$m}" phone="{$p}" role="{$r}" linkedin="{$l}"><notes>{$z}</notes></contact>}</contacts> return update replace $f//contacts with $x};
+declare function local:notes($f as node()) {let $ps:=request:get-parameter-names() let $is:=distinct-values(for $p in $ps where starts-with($p,'notes[') return replace($p,'notes\[(\d+)\].*','$1')) let $x:=<notes>{for $i in $is return <note date="{local:param('notes['||$i||'][date]')}" type="{local:param('notes['||$i||'][type]')}">{local:param('notes['||$i||'][note]')}</note>}</notes> return update replace $f//notes with $x};
+declare function local:docs($f as node()) {let $ps:=request:get-parameter-names() let $del:=for $p in $ps where starts-with($p,'deleteDocument[') return request:get-parameter($p,'') let $_:=for $n in $del where xmldb:resource-exists(local:col(),$n) return xmldb:remove(local:col(),$n) let $keep:=$f//documents/document[not(@storedName=$del)] let $is:=distinct-values(for $p in $ps where starts-with($p,'documentType[') return replace($p,'documentType\[(\d+)\]','$1')) let $new:=for $i in $is return local:upload('documentFile['||$i||']',local:param('documentType['||$i||']')) return update replace $f//documents with <documents>{$keep,$new}</documents>};
+declare function local:run() {let $c:=local:col() let $new:=not(xmldb:collection-available($c)) let $_:=if($new) then xmldb:create-collection($tsh:base,$id) else () let $_:=if($new) then xmldb:copy-resource($tsh:XMLPath,'blank.xml',$c,$id||'.xml') else () let $f:=doc($c||'/'||$id||'.xml') let $v1:=update value $f/job/@id with $id let $v2:=update value $f/job/company with local:param('companyName') let $v3:=update value $f/job/url with local:param('url') let $v4:=update value $f/job/title with local:param('jobTitle') let $v5:=update value $f/job/dates/@applied with local:param('dateApplied') let $v6:=update value $f/job/dates/@rejected with local:param('dateRejected') let $v7:=update value $f/job/status with local:param('status') let $_c:=local:contacts($f) let $_n:=local:notes($f) let $_d:=local:docs($f) return response:redirect-to(xs:anyURI('../../index.html'))};
+system:as-user($tsh:adminUser,$tsh:adminPassword,local:run())
