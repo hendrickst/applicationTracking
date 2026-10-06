@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Job Application Entry</title><link rel="stylesheet" href="./resources/css/styles.css"/></head>
 <body><div class="container"><h1>Add / Edit Job Application</h1><p class="sub">Track the position, contacts, documents, and notes in one place.</p>
 <form id="jobForm" action="./resources/xql/update.xql" method="post" enctype="multipart/form-data">
-<input id="record" name="record" type="hidden"/>
+<input id="record" name="record" type="hidden"/><input id="contactCount" name="contactCount" type="hidden" value="0"/><input id="noteCount" name="noteCount" type="hidden" value="0"/><input id="documentCount" name="documentCount" type="hidden" value="0"/>
 <div class="grid">
 <div class="field"><label for="companyName">Company Name</label><input id="companyName" name="companyName" type="text" placeholder="Company"/></div>
 <div class="field"><label for="jobTitle">Job Title</label><input id="jobTitle" name="jobTitle" type="text" placeholder="Job title"/></div>
