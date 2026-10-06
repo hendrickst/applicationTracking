@@ -31,7 +31,7 @@ function documentCard(x,i){
 function renumberDocuments(){document.querySelectorAll(".document-card").forEach((d,i)=>{d.dataset.index=i;d.querySelectorAll("input,select").forEach(el=>{el.name=el.name.replace(/(documentType|documentFile|documentDelete)\[\d+\]/,"$1["+i+"]");});});}
 function renderDocuments(){const c=qs("#documentsContainer");c.innerHTML="";state.documents.forEach((x,i)=>c.appendChild(documentCard(x,i)));}
 function addContact(){const c=qs("#contactsContainer");if(c.querySelector(".empty"))c.innerHTML="";const i=c.querySelectorAll(".contact-card").length;c.appendChild(contactCard({name:"",role:"Recruiter",mail:"",phone:"",linkedin:"",notes:""},i));}
-function addNote(){const c=qs("#notesContainer");if(c.querySelector(".empty"))c.innerHTML="";const i=0;c.insertBefore(noteCard({date:new Date().toISOString().slice(0,10),type:"Other",note:""},i),c.firstChild);renumberNotes();}
+function addNote(){const c=qs("#notesContainer");if(c.querySelector(".empty"))c.innerHTML="";const n=noteCard({date:new Date().toISOString().slice(0,10),type:"Other",note:""},0);n.open=true;c.insertBefore(n,c.firstChild);renumberNotes();}
 function addDocument(){const c=qs("#documentsContainer");const i=c.querySelectorAll(".document-card").length;c.appendChild(documentCard({existing:false,type:"Resume"},i));}
 
 async function populate(){
