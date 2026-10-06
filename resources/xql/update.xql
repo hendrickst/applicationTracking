@@ -25,26 +25,25 @@ declare function local:upload($i as xs:string,$type as xs:string) as element()? 
 declare function local:contacts($f as node()) {
  let $count:=xs:integer(request:get-parameter("contactCount","0"))
  let $x:=<contacts>{if($count > 0) then for $i in 0 to ($count - 1) return
-   <contact name="{local:param('contacts['||$i||'][name]')}" mail="{local:param('contacts['||$i||'][mail]')}" phone="{local:param('contacts['||$i||'][phone]')}" role="{local:param('contacts['||$i||'][role]')}" linkedin="{local:param('contacts['||$i||'][linkedin]')}"><notes>{local:param('contacts['||$i||'][notes]')}</notes></contact>
- }</contacts>
+   <contact name="{local:param('contacts['||$i||'][name]')}" mail="{local:param('contacts['||$i||'][mail]')}" phone="{local:param('contacts['||$i||'][phone]')}" role="{local:param('contacts['||$i||'][role]')}" linkedin="{local:param('contacts['||$i||'][linkedin]')}"><notes>{local:param('contacts['||$i||'][notes]')}</notes></contact> else ()}</contacts>
  return update replace $f//contacts with $x
 };
 
 declare function local:notes($f as node()) {
  let $count:=xs:integer(request:get-parameter("noteCount","0"))
- let $x:=<notes>{if($count > 0) then for $i in 0 to ($count - 1) return <note date="{local:param('notes['||$i||'][date]')}" type="{local:param('notes['||$i||'][type]')}">{local:param('notes['||$i||'][note]')}</note>}</notes>
+ let $x:=<notes>{if($count > 0) then for $i in 0 to ($count - 1) return <note date="{local:param('notes['||$i||'][date]')}" type="{local:param('notes['||$i||'][type]')}">{local:param('notes['||$i||'][note]')}</note>}</notes> else ()}</notes>
  return update replace $f//notes with $x
 };
 
 declare function local:docs($f as node()) {
  let $count:=xs:integer(request:get-parameter("documentCount","0"))
  let $existing:=$f//documents/document
- let $deleted:=if($count > 0) then for $i in 0 to ($count - 1) return request:get-parameter("documentDelete["||$i||"]","")
- let $_:=for $name in $deleted where $name and xmldb:resource-exists(local:col(),$name) return xmldb:remove(local:col(),$name)
+ let $deleted:=if($count > 0) then for $i in 0 to ($count - 1) return request:get-parameter("documentDelete["||$i||"]","") else ()
+ let $_:=for $name in $deleted where $name and xmldb:resource-available(local:col(),$name) return xmldb:remove(local:col(),$name)
  let $keep:=$existing[not(@storedName=$deleted)]
  let $new:=if($count > 0) then for $i in 0 to ($count - 1) return local:upload(xs:string($i),local:param("documentType["||$i||"]")) else ()
  let $x:=<documents>{$keep,$new}</documents>
- return update replace $f//documents with $x
+ return if(exists($f//documents)) then update replace $f//documents with $x else update insert $x into $f/job
 };
 
 declare function local:run() {
