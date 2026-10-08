@@ -31,9 +31,8 @@ declare function local:contacts($f as node()) {
 };
 
 declare function local:notes($f as node()) {
- let $params:=request:get-parameter-names()
- let $indexes:=distinct-values(for $p in $params where starts-with($p,"notes[") return replace($p,"notes\\[(\\d+)\\].*","$1"))
- let $x:=<notes>{for $i in $indexes let $date:=request:get-parameter("notes["||$i||"][date]","") let $type:=request:get-parameter("notes["||$i||"][type]","Other") let $note:=request:get-parameter("notes["||$i||"][note]","") order by xs:integer($i) return <note date="{$date}" type="{$type}">{string($note)}</note>}</notes>
+ let $count:=xs:integer(request:get-parameter("noteCount","0"))
+ let $x:=<notes>{if($count > 0) then for $i in 0 to ($count - 1) return <note date="{local:param('notes['||$i||'][date]')}" type="{local:param('notes['||$i||'][type]')}">{local:param('notes['||$i||'][note]')}</note> else ()}</notes>
  return update replace $f/job/notes with $x
 };
 
