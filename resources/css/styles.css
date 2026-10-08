@@ -21,3 +21,12 @@ hr{margin:28px 0 16px;border-top:2px solid #dedee8}.section-header{padding:14px 
 
 /* Even footer button spacing */
 .footer>div{display:flex;gap:10px;align-items:center}
+
+/* Rich-text notes editor */
+.note-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid #d8d8e2;border-bottom:0;border-radius:10px 10px 0 0;background:#f8f8fc}
+.note-toolbar .btn{width:auto;padding:6px 10px;border-radius:7px;font-size:13px}
+.note-editor{min-height:130px;padding:12px;border:1px solid #d8d8e2;border-radius:0 0 10px 10px;outline:none;white-space:pre-wrap;overflow-wrap:anywhere}
+.note-editor:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+.note-editor:empty:before{content:"Write your note here…";color:#999;pointer-events:none}
+.note-editor ul,.note-editor ol{padding-left:24px}
+.note-editor h2,.note-editor h3{margin:10px 0 6px}
