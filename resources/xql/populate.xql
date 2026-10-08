@@ -1,8 +1,5 @@
 xquery version "3.1";
 import module namespace tsh="tsh" at "./config.xql";
-
-declare variable $record := req:parameter('record');
-
-for $f in collection($tsh:working)[.//@id = $record][1]
-return
-    $f
+declare variable $record := request:get-parameter("record","");
+let $c := $tsh:base || "/" || $record
+return if ($record and xmldb:collection-available($c) and doc-available($c||"/"||$record||".xml")) then doc($c||"/"||$record||".xml") else ()
