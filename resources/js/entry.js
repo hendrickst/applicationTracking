@@ -12,59 +12,11 @@ function contactCard(x,i){
 }
 function renumberContacts(){document.querySelectorAll(".contact-card").forEach((d,i)=>d.querySelectorAll("input,select,textarea").forEach(el=>el.name=el.name.replace(/contacts\[\d+\]/,"contacts["+i+"]")));}
 function renderContacts(){const c=qs("#contactsContainer");c.innerHTML="";state.contacts.forEach((x,i)=>c.appendChild(contactCard(x,i)));}
-function sanitizeNoteHtml(value){
- const doc=new DOMParser().parseFromString(String(value??""),"text/html");
- const allowed=new Set(["P","DIV","BR","STRONG","B","EM","I","U","UL","OL","LI","BLOCKQUOTE","H2","H3","A"]);
- const clean=node=>{
-  for(const child of [...node.childNodes]){
-   if(child.nodeType===Node.ELEMENT_NODE){
-    if(!allowed.has(child.tagName)){
-     if(["SCRIPT","STYLE","IFRAME","OBJECT","SVG","MATH"].includes(child.tagName)){child.remove();continue;}
-     child.replaceWith(...child.childNodes);continue;
-    }
-    const rawHref=child.tagName==="A"?(child.getAttribute("href")||""):"";
-    for(const attr of [...child.attributes])child.removeAttribute(attr.name);
-    if(child.tagName==="A"){
-     if(/^https?:\/\//i.test(rawHref))child.setAttribute("href",rawHref);
-     child.setAttribute("target","_blank");
-     child.setAttribute("rel","noopener noreferrer");
-    }
-    clean(child);
-   }else if(child.nodeType!==Node.TEXT_NODE){child.remove();}
-  }
- };
- clean(doc.body);
- return doc.body.innerHTML;
-}
-function notePreview(v,maxLength=110){
- const t=String(v??"").replace(/<br\s*\/?\s*>/gi," ").replace(/<\/(p|div|li|h2|h3|blockquote)>/gi," ").replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/\s+/g," ").trim();
- if(!t)return "No note entered";
- return t.length<=maxLength?t:t.substring(0,maxLength).trimEnd()+"…";
-}
+function notePreview(v,maxLength=110){const t=String(v??"").replace(/\s+/g," ").trim();if(!t)return "No note entered";return t.length<=maxLength?t:t.substring(0,maxLength).trimEnd()+"…";}
 function noteCard(x,i){
  const d=document.createElement("details");d.className="card note-card";
- d.innerHTML='<summary><span class="summary-main"><span class="summary-title">'+esc(x.type||"Note")+'</span><span class="summary-preview">'+esc(notePreview(x.note))+'</span></span><span class="summary-meta">'+esc(x.date||"")+'</span></summary><div class="note-grid"><div class="field"><label>Date</label><input type="date" name="notes['+i+'][date]" value="'+esc(x.date)+'"/></div><div class="field"><label>Type</label><select name="notes['+i+'][type]"><option>Initial</option><option>Interview</option><option>Rejection</option><option>Other</option></select></div><div class="field full"><label>Note</label><div class="note-toolbar" role="toolbar" aria-label="Note formatting"><button type="button" class="btn" data-command="bold" aria-label="Bold"><strong>B</strong></button><button type="button" class="btn" data-command="italic" aria-label="Italic"><em>I</em></button><button type="button" class="btn" data-command="underline" aria-label="Underline"><u>U</u></button><button type="button" class="btn" data-command="insertUnorderedList" aria-label="Bulleted list">• List</button><button type="button" class="btn" data-command="insertOrderedList" aria-label="Numbered list">1. List</button><button type="button" class="btn" data-command="formatBlock" data-value="h3" aria-label="Heading">Heading</button><button type="button" class="btn" data-command="createLink" aria-label="Insert link">Link</button></div><div class="note-editor" contenteditable="true" role="textbox" aria-label="Note content" aria-multiline="true"></div><input type="hidden" name="notes['+i+'][note]" value=""/></div></div><div class="card-actions"><button type="button" class="btn danger remove-note">Remove</button></div>';
- const editor=d.querySelector(".note-editor"),hidden=d.querySelector('input[type="hidden"]');
- const looksLikeMarkup=/<(p|br|strong|b|em|i|u|ul|ol|li|blockquote|h[2-3]|a)\b/i.test(x.note||"");
- if(looksLikeMarkup)editor.innerHTML=sanitizeNoteHtml(x.note);
- else editor.textContent=x.note||"";
- const sync=()=>{hidden.value=sanitizeNoteHtml(editor.innerHTML);d.querySelector(".summary-preview").textContent=notePreview(hidden.value);};
- editor.addEventListener("input",sync);
- d.querySelectorAll(".note-toolbar button").forEach(btn=>btn.addEventListener("mousedown",e=>e.preventDefault()));
- d.querySelectorAll(".note-toolbar button").forEach(btn=>btn.addEventListener("click",()=>{
-  editor.focus();
-  const command=btn.dataset.command;
-  if(command==="createLink"){
-   const url=prompt("Enter the link URL (https:// or http://):");
-   if(url&&/^https?:\/\//i.test(url)){document.execCommand("createLink",false,url);sync();}
-   return;
-  }
-  document.execCommand(command,false,btn.dataset.value||null);sync();
- }));
- sync();
- d.querySelector("select").value=x.type||"Other";
- d.querySelector(".remove-note").onclick=e=>{e.preventDefault();d.remove();renumberNotes();};
- return d;
+ d.innerHTML='<summary><span class="summary-main"><span class="summary-title">'+esc(x.type||"Note")+'</span><span class="summary-preview">'+esc(notePreview(x.note))+'</span></span><span class="summary-meta">'+esc(x.date||"")+'</span></summary><div class="note-grid"><div class="field"><label>Date</label><input type="date" name="notes['+i+'][date]" value="'+esc(x.date)+'"/></div><div class="field"><label>Type</label><select name="notes['+i+'][type]"><option>Initial</option><option>Interview</option><option>Rejection</option><option>Other</option></select></div><div class="field full"><label>Note</label><textarea name="notes['+i+'][note]">'+esc(x.note)+'</textarea></div></div><div class="card-actions"><button type="button" class="btn danger remove-note">Remove</button></div>';
+ d.querySelector("select").value=x.type||"Other";d.querySelector(".remove-note").onclick=e=>{e.preventDefault();d.remove();renumberNotes();};return d;
 }
 function renumberNotes(){document.querySelectorAll(".note-card").forEach((d,i)=>d.querySelectorAll("input,select,textarea").forEach(el=>el.name=el.name.replace(/notes\[\d+\]/,"notes["+i+"]")));}
 function renderNotes(){const c=qs("#notesContainer");c.innerHTML="";state.notes.forEach((x,i)=>c.appendChild(noteCard(x,i)));}
