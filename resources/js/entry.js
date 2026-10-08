@@ -14,7 +14,7 @@ function renumberContacts(){document.querySelectorAll(".contact-card").forEach((
 function renderContacts(){const c=qs("#contactsContainer");c.innerHTML="";state.contacts.forEach((x,i)=>c.appendChild(contactCard(x,i)));}
 function sanitizeNoteHtml(value){
  const doc=new DOMParser().parseFromString(String(value??""),"text/html");
- const allowed=new Set(["P","BR","STRONG","B","EM","I","U","UL","OL","LI","BLOCKQUOTE","H2","H3","A"]);
+ const allowed=new Set(["P","DIV","BR","STRONG","B","EM","I","U","UL","OL","LI","BLOCKQUOTE","H2","H3","A"]);
  const clean=node=>{
   for(const child of [...node.childNodes]){
    if(child.nodeType===Node.ELEMENT_NODE){
@@ -37,7 +37,7 @@ function sanitizeNoteHtml(value){
  return doc.body.innerHTML;
 }
 function notePreview(v,maxLength=110){
- const t=String(v??"").replace(/<br\s*\/?\s*>/gi," ").replace(/<\/(p|li|h2|h3|blockquote)>/gi," ").replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/\s+/g," ").trim();
+ const t=String(v??"").replace(/<br\s*\/?\s*>/gi," ").replace(/<\/(p|div|li|h2|h3|blockquote)>/gi," ").replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/\s+/g," ").trim();
  if(!t)return "No note entered";
  return t.length<=maxLength?t:t.substring(0,maxLength).trimEnd()+"…";
 }
