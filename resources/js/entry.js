@@ -11,7 +11,7 @@ function contactCard(x,i){
  return d;
 }
 function renumberContacts(){document.querySelectorAll(".contact-card").forEach((d,i)=>d.querySelectorAll("input,select,textarea").forEach(el=>el.name=el.name.replace(/contacts\[\d+\]/,"contacts["+i+"]")));}
-function renderContacts(){const c=qs("#contactsContainer");c.innerHTML="";if(!state.contacts.length)c.innerHTML='<div class="card empty">No contacts yet.</div>';state.contacts.forEach((x,i)=>c.appendChild(contactCard(x,i)));}
+function renderContacts(){const c=qs("#contactsContainer");c.innerHTML="";state.contacts.forEach((x,i)=>c.appendChild(contactCard(x,i)));}
 function notePreview(v,maxLength=110){const t=String(v??"").replace(/\s+/g," ").trim();if(!t)return "No note entered";return t.length<=maxLength?t:t.substring(0,maxLength).trimEnd()+"…";}
 function noteCard(x,i){
  const d=document.createElement("details");d.className="card note-card";
@@ -19,7 +19,7 @@ function noteCard(x,i){
  d.querySelector("select").value=x.type||"Other";d.querySelector(".remove-note").onclick=e=>{e.preventDefault();d.remove();renumberNotes();};return d;
 }
 function renumberNotes(){document.querySelectorAll(".note-card").forEach((d,i)=>d.querySelectorAll("input,select,textarea").forEach(el=>el.name=el.name.replace(/notes\[\d+\]/,"notes["+i+"]")));}
-function renderNotes(){const c=qs("#notesContainer");c.innerHTML="";if(!state.notes.length)c.innerHTML='<div class="card empty">No notes yet.</div>';state.notes.forEach((x,i)=>c.appendChild(noteCard(x,i)));}
+function renderNotes(){const c=qs("#notesContainer");c.innerHTML="";state.notes.forEach((x,i)=>c.appendChild(noteCard(x,i)));}
 
 function documentCard(x,i){
  const d=document.createElement("div");d.className="card document-card";d.dataset.index=i;
