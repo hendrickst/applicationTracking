@@ -18,3 +18,6 @@ hr{margin:28px 0 16px;border-top:2px solid #dedee8}.section-header{padding:14px 
 
 /* Add horizontal padding to section headings */
 .section-header{padding-left:16px;padding-right:16px}
+
+/* Even footer button spacing */
+.footer>div{display:flex;gap:10px;align-items:center}
