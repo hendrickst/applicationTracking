@@ -9,7 +9,7 @@ if (xmldb:collection-available($old)) then
             let $id := replace($name,"\.xml$","")
             let $c := $base || "/" || $id
             let $_c := if(xmldb:collection-available($c)) then () else xmldb:create-collection($base,$id)
-            let $_x := if(not(xmldb:resource-exists($c,$name))) then xmldb:copy-resource($old,$name,$c,$name) else ()
+            let $_x := if(not($name = xmldb:get-child-resources($c))) then xmldb:copy-resource($old,$name,$c,$name) else ()
             return ()
   let $_remove := xmldb:remove($old)
   return ()
