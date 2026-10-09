@@ -17,13 +17,13 @@ The entry form supports multiple contacts, LinkedIn URLs and contact notes, repe
 
 ## Gemini job chat
 
-Each application has a separate AI chat at `chat.html?record=<application-id>`. The conversation is persisted in that job's collection as `chat.xml`, separate from other applications. The chat is text-only and includes the saved company, title, status, posting URL, and application notes as context. It does not automatically transmit uploaded resumes or contact information.
+Each application has a separate AI chat embedded at the bottom of its edit page; `chat.html?record=<application-id>` remains available as a standalone view. The conversation is persisted in that job's collection as `chat.xml`, separate from other applications. The chat is text-only and includes the saved company, title, status, posting URL, and application notes as context. It does not automatically transmit uploaded resumes or contact information.
 
 ### Setup
 
 1. Create an API key in [Google AI Studio](https://aistudio.google.com/).
-2. Open an application, then click **Open AI Chat** on its edit page and paste the key into the Gemini settings.
-3. Confirm the privacy notice and save settings. The key is stored in this browser's local storage, not in eXist-db or the Git repository.
+2. Open an existing application and scroll to the **AI Chat** section near the bottom of its edit page. Expand **Gemini API Settings** and paste the key.
+3. Save the settings. The settings section collapses after saving and opens automatically if no key has been saved in this browser. The key is stored in this browser's local storage, not in eXist-db or the Git repository.
 4. Send a message. Chat history is saved to eXist-db after each message and response.
 
 The initial model is `gemini-3.5-flash-lite`. The chat uses Google's recommended Interactions API and sends `store:false`; the app keeps its own transcript in eXist-db. If Google no longer offers this model, change the model field to a currently available model in chat settings.
