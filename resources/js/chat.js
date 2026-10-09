@@ -41,8 +41,14 @@
     if (!response.ok) throw new Error("Could not load job details.");
     const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
     if (xml.querySelector("parsererror")) throw new Error("The job record could not be read.");
+    const notes = [...xml.querySelectorAll("job > notes > note")].map(node => {
+      const date = node.getAttribute("date") || "";
+      const type = node.getAttribute("type") || "Note";
+      const text = (node.textContent || "").trim();
+      return text ? (date ? "[" + date + "] " : "") + type + ": " + text : "";
+    }).filter(Boolean);
     job = {company:xml.querySelector("job > company")?.textContent || "", title:xml.querySelector("job > title")?.textContent || "",
-      url:xml.querySelector("job > url")?.textContent || "", status:xml.querySelector("job > status")?.textContent || ""};
+      url:xml.querySelector("job > url")?.textContent || "", status:xml.querySelector("job > status")?.textContent || "", notes};
     $("#chatTitle").textContent = (job.company || "Job") + (job.title ? " — " + job.title : "") + " · AI Chat";
     $("#chatSubtitle").textContent = "A saved conversation for " + (job.company || "this application") + ". Job details are used as context; uploaded documents, contacts, and notes are not sent automatically.";
   }
@@ -81,9 +87,10 @@
     host.scrollTop = host.scrollHeight;
   }
   function contextPrompt() {
-    return "You are an assistant helping with one job application. Be practical, honest, concise, and grounded in facts the user provides. Do not invent experience or interview details. The app has supplied only these job fields: company: " +
+    return "You are an assistant helping with one job application. Be practical, honest, concise, and grounded in facts the user provides. Do not invent experience or interview details. The app supplies these saved job details: company: " +
       (job.company || "not specified") + "; title: " + (job.title || "not specified") + "; status: " + (job.status || "not specified") +
-      "; job posting URL: " + (job.url || "not provided") + ". Do not claim to have opened or read the URL. Uploaded resumes, contact information, and application notes are intentionally not included. Ask for relevant details when needed.";
+      "; job posting URL: " + (job.url || "not provided") + ". Saved application notes:\\n" + (job.notes && job.notes.length ? job.notes.join("\\n") : "No application notes saved.") +
+      "\\nThe URL is provided as a reference link only; you have not been given the webpage contents and must not claim to have opened or read the posting. If the user asks about details from the posting, ask them to paste the relevant text or upload the job description. Uploaded documents and contact details are not included. Treat notes as user-provided context, not guaranteed facts; ask when clarification is needed.";
   }
   async function sendMessage(text) {
     const s = settings();
