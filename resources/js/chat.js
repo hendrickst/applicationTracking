@@ -13,14 +13,14 @@
   const setStatus = (text, error=false) => { $("#chatStatus").textContent = text; $("#chatStatus").classList.toggle("error", error); };
 
   function settings() {
-    return { apiKey: $("#apiKey").value.trim(), model: $("#model").value.trim() || "gemini-2.5-flash-lite",
+    return { apiKey: $("#apiKey").value.trim(), model: $("#model").value.trim() || "gemini-3.5-flash-lite",
       temperature: Math.max(0, Math.min(1, Number($("#temperature").value || 0.4))), consent: $("#privacyConsent").checked };
   }
   function loadSettings() {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
       $("#apiKey").value = saved.apiKey || "";
-      $("#model").value = saved.model || "gemini-2.5-flash-lite";
+      $("#model").value = saved.model || "gemini-3.5-flash-lite";
       $("#temperature").value = String(saved.temperature ?? 0.4);
       $("#privacyConsent").checked = saved.consent === true;
       $("#settingsStatus").textContent = saved.apiKey ? "Settings loaded from this browser." : "Add an API key from Google AI Studio. The key is not saved in eXist-db.";
@@ -92,17 +92,22 @@
     messages.push({role:"user", text, time:localDate()});
     renderMessages();
     await persist();
-    let history = messages.slice(-24);
-    if (history.length && history[0].role === "model") history = history.slice(1);
-    const contents = history.map(m => ({role:m.role, parts:[{text:m.text}]}));
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(s.model) + ":generateContent", {
+    const history = messages.slice(-24).map(m => (m.role === "model" ? "Assistant" : "User") + ": " + m.text).join("\\n\\n");
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
       method:"POST",
       headers:{"Content-Type":"application/json", "x-goog-api-key":s.apiKey},
-      body:JSON.stringify({systemInstruction:{parts:[{text:contextPrompt()}]}, contents, generationConfig:{temperature:s.temperature, maxOutputTokens:2048}})
+      body:JSON.stringify({
+        model:s.model,
+        system_instruction:contextPrompt() + "\\n\\nUse the conversation transcript to maintain continuity. Respond to the latest user message.",
+        input:history,
+        store:false,
+        generation_config:{temperature:s.temperature, max_output_tokens:2048}
+      })
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error?.message || "Gemini request failed (HTTP " + response.status + "). Check the API key, model name, and free quota.");
-    const answer = (payload.candidates?.[0]?.content?.parts || []).map(part => part.text || "").join("").trim();
+    const answer = (payload.steps || []).filter(step => step.type === "model_output")
+      .flatMap(step => step.content || []).map(part => part.text || "").join("").trim();
     if (!answer) throw new Error("Gemini returned no text. Check the model response or try again.");
     messages.push({role:"model", text:answer, time:localDate()});
     await persist();
