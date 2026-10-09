@@ -14,7 +14,7 @@
 
   function settings() {
     return { apiKey: $("#apiKey").value.trim(), model: $("#model").value.trim() || "gemini-3.5-flash-lite",
-      temperature: Math.max(0, Math.min(1, Number($("#temperature").value || 0.4))), consent: $("#privacyConsent").checked };
+      temperature: Math.max(0, Math.min(1, Number($("#temperature").value || 0.4))) };
   }
   function loadSettings() {
     try {
@@ -23,20 +23,22 @@
       $("#apiKey").value = saved.apiKey || "";
       $("#model").value = saved.model || "gemini-3.5-flash-lite";
       $("#temperature").value = String(saved.temperature ?? 0.4);
-      $("#privacyConsent").checked = saved.consent === true;
       $("#settingsStatus").textContent = saved.apiKey ? "Settings loaded from this browser." : "Add an API key from Google AI Studio. The key is not saved in eXist-db.";
+      const panel = $("#chatSettingsSection");
+      if (panel) panel.open = !saved.apiKey;
     } catch (_) {}
   }
   function saveSettings() {
     const s = settings();
     if (!s.apiKey) { $("#settingsStatus").textContent = "Enter an API key first."; return; }
-    if (!s.consent) { $("#settingsStatus").textContent = "Please confirm the privacy notice before using Gemini."; return; }
     localStorage.setItem(storageKey, JSON.stringify(s));
     $("#settingsStatus").textContent = "Settings saved in this browser.";
+    const panel = $("#chatSettingsSection"); if (panel) panel.open = false;
   }
   async function loadJob() {
     if (!/^[A-Za-z0-9-]+$/.test(record)) throw new Error("Missing or invalid application record ID.");
-    $("#editJobLink").href = "./update.html?record=" + encodeURIComponent(record);
+    const editLink = $("#editJobLink"); if (editLink) editLink.href = "./update.html?record=" + encodeURIComponent(record);
+    const embedded = $("#embeddedChatSection"); if (embedded) embedded.hidden = false;
     const response = await fetch("./resources/xql/populate.xql?record=" + encodeURIComponent(record), {cache:"no-store"});
     if (!response.ok) throw new Error("Could not load job details.");
     const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
@@ -145,7 +147,6 @@
   async function sendMessage(text) {
     const s = settings();
     if (!s.apiKey) throw new Error("Add your Gemini API key in the settings above.");
-    if (!s.consent) throw new Error("Confirm the privacy notice before sending messages to Gemini.");
     if (!s.model) throw new Error("Enter a Gemini model name.");
     messages.push({role:"user", text, time:localDate()});
     renderMessages();
@@ -184,16 +185,25 @@
   document.addEventListener("DOMContentLoaded", async () => {
     loadSettings();
     $("#saveSettingsBtn").addEventListener("click", saveSettings);
-    $("#chatForm").addEventListener("submit", async event => {
-      event.preventDefault(); if (busy) return;
+    const submitMessage = async () => {
+      if (busy) return;
       const input = $("#userMessage"), text = input.value.trim(); if (!text) return;
       busy = true; $("#sendBtn").disabled = true; input.disabled = true; setStatus("Sending to Gemini…");
       try { input.value = ""; await sendMessage(text); setStatus("Response received and conversation saved."); }
       catch (error) { setStatus(error.message || "Something went wrong.", true); }
       finally { busy = false; $("#sendBtn").disabled = false; input.disabled = false; input.focus(); }
+    };
+    const chatForm = $("#chatForm");
+    if (chatForm) chatForm.addEventListener("submit", event => { event.preventDefault(); submitMessage(); });
+    else $("#sendBtn").addEventListener("click", submitMessage);
+    $("#userMessage").addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+        event.preventDefault(); if (chatForm) chatForm.requestSubmit(); else submitMessage();
+      }
     });
     $("#copySummaryBtn").addEventListener("click", () => copySummary().catch(error => setStatus(error.message, true)));
     $("#clearChatBtn").addEventListener("click", () => clearChat().catch(error => setStatus(error.message, true)));
+    if (!record && $("#embeddedChatSection")) return;
     try { await loadJob(); await loadMessages(); }
     catch (error) { $("#chatMessages").textContent = error.message; setStatus(error.message, true); }
   });
