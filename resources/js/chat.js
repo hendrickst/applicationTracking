@@ -99,7 +99,7 @@
     const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(s.model) + ":generateContent", {
       method:"POST",
       headers:{"Content-Type":"application/json", "x-goog-api-key":s.apiKey},
-      body:JSON.stringify({contents, generationConfig:{temperature:s.temperature, maxOutputTokens:2048}})
+      body:JSON.stringify({systemInstruction:{parts:[{text:contextPrompt()}]}, contents, generationConfig:{temperature:s.temperature, maxOutputTokens:2048}})
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error?.message || "Gemini request failed (HTTP " + response.status + "). Check the API key, model name, and free quota.");
