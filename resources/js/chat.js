@@ -92,10 +92,9 @@
     messages.push({role:"user", text, time:localDate()});
     renderMessages();
     await persist();
-    const contents = messages.slice(-24).map((m, i) => ({
-      role:m.role,
-      parts:[{text:(i === 0 && m.role === "user" ? contextPrompt() + "\n\nUser message: " : "") + m.text}]
-    }));
+    let history = messages.slice(-24);
+    if (history.length && history[0].role === "model") history = history.slice(1);
+    const contents = history.map(m => ({role:m.role, parts:[{text:m.text}]}));
     const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(s.model) + ":generateContent", {
       method:"POST",
       headers:{"Content-Type":"application/json", "x-goog-api-key":s.apiKey},
