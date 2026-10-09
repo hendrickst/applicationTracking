@@ -98,7 +98,6 @@ return
                 <td><a class="job-link" href="./update.html?record={$id}">{$j/title/text()}</a></td>
                 <td class="status {$s}">{$s}</td>
                 <td>{$j/dates/@applied/string()}</td>
-                <td><a class="btn" href="./chat.html?record={$id}">Open Chat</a></td>
             </tr>
         }</tbody>
     </table>
