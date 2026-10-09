@@ -17,7 +17,7 @@ The entry form supports multiple contacts, LinkedIn URLs and contact notes, repe
 
 ## Gemini job chat
 
-Each application has a separate AI chat at `chat.html?record=<application-id>`. The conversation is persisted in that job's collection as `chat.xml`, separate from other applications. The chat is text-only and does not automatically transmit uploaded resumes, contact information, or saved application notes.
+Each application has a separate AI chat at `chat.html?record=<application-id>`. The conversation is persisted in that job's collection as `chat.xml`, separate from other applications. The chat is text-only and includes the saved company, title, status, posting URL, and application notes as context. It does not automatically transmit uploaded resumes or contact information.
 
 ### Setup
 
@@ -31,6 +31,6 @@ The initial model is `gemini-3.5-flash-lite`. The chat uses Google's recommended
 ### Security and privacy notes
 
 - This first version calls Gemini directly from the browser to avoid requiring a paid hosting service or server-side secret configuration. The API key is therefore accessible to anyone who can use the same browser profile or inspect its developer tools. Use an API key restricted in Google Cloud where possible, and do not use this approach on a public, multi-user installation.
-- Google's unpaid Gemini API terms say submitted prompts and responses may be used to improve its products and may be reviewed by humans. Do not send personal, sensitive, or confidential information through the free tier. The app sends the job company, title, status, and posting URL as context; it does not automatically send resumes, contacts, or notes.
+- Google's unpaid Gemini API terms say submitted prompts and responses may be used to improve its products and may be reviewed by humans. Do not send personal, sensitive, or confidential information through the free tier. The app sends the job company, title, status, posting URL, and saved application notes as context; it does not automatically send resumes or contact details. The URL is sent as a link only—the app does not fetch the posting webpage contents.
 - Free-tier quotas and model availability can change. This app does not enable paid billing or switch to a paid model automatically.
 - The API key is saved in browser local storage. Clear it using the browser's site data settings if you want to remove it.
