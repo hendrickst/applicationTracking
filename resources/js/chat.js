@@ -176,7 +176,20 @@
   async function copySummary() {
     const lines = messages.map(m => (m.role === "model" ? "Gemini" : "User") + ": " + m.text);
     const summary = "Job: " + (job.company || "") + " — " + (job.title || "") + "\nStatus: " + (job.status || "") + "\n\nConversation transcript:\n" + lines.join("\n\n");
-    await navigator.clipboard.writeText(summary);
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      await navigator.clipboard.writeText(summary);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = summary;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      let copied = false;
+      try { copied = document.execCommand("copy"); } finally { textarea.remove(); }
+      if (!copied) throw new Error("Clipboard access is blocked by this browser or page. Try HTTPS or copy the conversation manually.");
+    }
     setStatus("Conversation copied. Paste it wherever you want to keep a summary.");
   }
   async function clearChat() {
