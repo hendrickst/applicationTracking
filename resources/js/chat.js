@@ -1,0 +1,138 @@
+(() => {
+  "use strict";
+  const $ = selector => document.querySelector(selector);
+  const params = new URLSearchParams(location.search);
+  const record = params.get("record") || "";
+  const storageKey = "jobs-gemini-settings";
+  let messages = [];
+  let job = {company:"", title:"", url:"", status:""};
+  let busy = false;
+
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+  const localDate = () => new Date().toISOString();
+  const setStatus = (text, error=false) => { $("#chatStatus").textContent = text; $("#chatStatus").classList.toggle("error", error); };
+
+  function settings() {
+    return { apiKey: $("#apiKey").value.trim(), model: $("#model").value.trim() || "gemini-2.5-flash-lite",
+      temperature: Math.max(0, Math.min(1, Number($("#temperature").value || 0.4))), consent: $("#privacyConsent").checked };
+  }
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+      $("#apiKey").value = saved.apiKey || "";
+      $("#model").value = saved.model || "gemini-2.5-flash-lite";
+      $("#temperature").value = String(saved.temperature ?? 0.4);
+      $("#privacyConsent").checked = saved.consent === true;
+      $("#settingsStatus").textContent = saved.apiKey ? "Settings loaded from this browser." : "Add an API key from Google AI Studio. The key is not saved in eXist-db.";
+    } catch (_) {}
+  }
+  function saveSettings() {
+    const s = settings();
+    if (!s.apiKey) { $("#settingsStatus").textContent = "Enter an API key first."; return; }
+    if (!s.consent) { $("#settingsStatus").textContent = "Please confirm the privacy notice before using Gemini."; return; }
+    localStorage.setItem(storageKey, JSON.stringify(s));
+    $("#settingsStatus").textContent = "Settings saved in this browser.";
+  }
+  async function loadJob() {
+    if (!/^[A-Za-z0-9-]+$/.test(record)) throw new Error("Missing or invalid application record ID.");
+    $("#editJobLink").href = "./update.html?record=" + encodeURIComponent(record);
+    const response = await fetch("./resources/xql/populate.xql?record=" + encodeURIComponent(record), {cache:"no-store"});
+    if (!response.ok) throw new Error("Could not load job details.");
+    const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
+    if (xml.querySelector("parsererror")) throw new Error("The job record could not be read.");
+    job = {company:xml.querySelector("job > company")?.textContent || "", title:xml.querySelector("job > title")?.textContent || "",
+      url:xml.querySelector("job > url")?.textContent || "", status:xml.querySelector("job > status")?.textContent || ""};
+    $("#chatTitle").textContent = (job.company || "Job") + (job.title ? " — " + job.title : "") + " · AI Chat";
+    $("#chatSubtitle").textContent = "A saved conversation for " + (job.company || "this application") + ". Job details are used as context; uploaded documents, contacts, and notes are not sent automatically.";
+  }
+  async function persist() {
+    const body = new URLSearchParams({record, action:"save", messages:JSON.stringify(messages)});
+    const response = await fetch("./resources/xql/chat.xql", {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"}, body});
+    const text = await response.text();
+    if (!response.ok || !text.includes('status="ok"')) throw new Error("Conversation could not be saved. " + text.slice(0,180));
+  }
+  async function loadMessages() {
+    const response = await fetch("./resources/xql/chat.xql?record=" + encodeURIComponent(record) + "&action=load", {cache:"no-store"});
+    if (!response.ok) throw new Error("Could not load saved conversation.");
+    const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
+    if (xml.querySelector("parsererror")) throw new Error("Saved conversation has invalid XML.");
+    messages = [...xml.querySelectorAll("conversation > message")].map(node => ({
+      role: node.getAttribute("role") || "user", text:node.textContent || "", time:node.getAttribute("time") || ""
+    }));
+    renderMessages();
+  }
+  function renderMessages() {
+    const host = $("#chatMessages");
+    host.innerHTML = "";
+    if (!messages.length) {
+      const empty = document.createElement("div"); empty.className = "chat-empty";
+      empty.textContent = "No messages yet. Ask a question to start this job's conversation."; host.appendChild(empty); return;
+    }
+    for (const message of messages) {
+      const item = document.createElement("article");
+      item.className = "chat-message " + (message.role === "model" ? "assistant-message" : "user-message");
+      const heading = document.createElement("div"); heading.className = "chat-message-role"; heading.textContent = message.role === "model" ? "Gemini" : "You";
+      const body = document.createElement("div"); body.className = "chat-message-text"; body.textContent = message.text;
+      const time = document.createElement("div"); time.className = "chat-message-time";
+      if (message.time && !Number.isNaN(Date.parse(message.time))) time.textContent = new Date(message.time).toLocaleString();
+      item.append(heading, body, time); host.appendChild(item);
+    }
+    host.scrollTop = host.scrollHeight;
+  }
+  function contextPrompt() {
+    return "You are an assistant helping with one job application. Be practical, honest, concise, and grounded in facts the user provides. Do not invent experience or interview details. The app has supplied only these job fields: company: " +
+      (job.company || "not specified") + "; title: " + (job.title || "not specified") + "; status: " + (job.status || "not specified") +
+      "; job posting URL: " + (job.url || "not provided") + ". Do not claim to have opened or read the URL. Uploaded resumes, contact information, and application notes are intentionally not included. Ask for relevant details when needed.";
+  }
+  async function sendMessage(text) {
+    const s = settings();
+    if (!s.apiKey) throw new Error("Add your Gemini API key in the settings above.");
+    if (!s.consent) throw new Error("Confirm the privacy notice before sending messages to Gemini.");
+    if (!s.model) throw new Error("Enter a Gemini model name.");
+    messages.push({role:"user", text, time:localDate()});
+    renderMessages();
+    await persist();
+    const contents = messages.slice(-24).map((m, i) => ({
+      role:m.role,
+      parts:[{text:(i === 0 && m.role === "user" ? contextPrompt() + "\n\nUser message: " : "") + m.text}]
+    }));
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(s.model) + ":generateContent", {
+      method:"POST",
+      headers:{"Content-Type":"application/json", "x-goog-api-key":s.apiKey},
+      body:JSON.stringify({contents, generationConfig:{temperature:s.temperature, maxOutputTokens:2048}})
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error?.message || "Gemini request failed (HTTP " + response.status + "). Check the API key, model name, and free quota.");
+    const answer = (payload.candidates?.[0]?.content?.parts || []).map(part => part.text || "").join("").trim();
+    if (!answer) throw new Error("Gemini returned no text. Check the model response or try again.");
+    messages.push({role:"model", text:answer, time:localDate()});
+    await persist();
+    renderMessages();
+  }
+  async function copySummary() {
+    const lines = messages.map(m => (m.role === "model" ? "Gemini" : "User") + ": " + m.text);
+    const summary = "Job: " + (job.company || "") + " — " + (job.title || "") + "\nStatus: " + (job.status || "") + "\n\nConversation transcript:\n" + lines.join("\n\n");
+    await navigator.clipboard.writeText(summary);
+    setStatus("Conversation copied. Paste it wherever you want to keep a summary.");
+  }
+  async function clearChat() {
+    if (!confirm("Delete this job's saved AI conversation? This cannot be undone.")) return;
+    messages = []; await persist(); renderMessages(); setStatus("Conversation cleared.");
+  }
+  document.addEventListener("DOMContentLoaded", async () => {
+    loadSettings();
+    $("#saveSettingsBtn").addEventListener("click", saveSettings);
+    $("#chatForm").addEventListener("submit", async event => {
+      event.preventDefault(); if (busy) return;
+      const input = $("#userMessage"), text = input.value.trim(); if (!text) return;
+      busy = true; $("#sendBtn").disabled = true; input.disabled = true; setStatus("Sending to Gemini…");
+      try { input.value = ""; await sendMessage(text); setStatus("Response received and conversation saved."); }
+      catch (error) { setStatus(error.message || "Something went wrong.", true); }
+      finally { busy = false; $("#sendBtn").disabled = false; input.disabled = false; input.focus(); }
+    });
+    $("#copySummaryBtn").addEventListener("click", () => copySummary().catch(error => setStatus(error.message, true)));
+    $("#clearChatBtn").addEventListener("click", () => clearChat().catch(error => setStatus(error.message, true)));
+    try { await loadJob(); await loadMessages(); }
+    catch (error) { $("#chatMessages").textContent = error.message; setStatus(error.message, true); }
+  });
+})();
