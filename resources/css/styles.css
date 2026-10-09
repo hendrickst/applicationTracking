@@ -61,3 +61,6 @@ body.chat-open>.container .document-row{grid-template-columns:1fr}
  .chat-drawer .chat-settings .grid{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){.chat-drawer,body.chat-open>.container{transition:none}.chat-backdrop{animation:none;opacity:1}}
+
+/* Keep the edit-page AI Chat toggle readable against the light section-header button background. */
+#toggleChatBtn{color:#5b21b6}
