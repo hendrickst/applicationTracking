@@ -35,7 +35,7 @@ function addNote(){const c=qs("#notesContainer");if(c.querySelector(".empty"))c.
 function addDocument(){const c=qs("#documentsContainer");const i=c.querySelectorAll(".document-card").length;c.appendChild(documentCard({existing:false,type:"Resume"},i));}
 
 async function populate(){
- const id=qs("#record").value;if(!id)return;
+ const id=qs("#record").value;if(!id)return;\n const chatLink=qs("#chatLink");if(chatLink){chatLink.href="./chat.html?record="+encodeURIComponent(id);chatLink.hidden=false;}
  const r=await fetch("./resources/xql/populate.xql?record="+encodeURIComponent(id),{cache:"no-store"});
  const xml=new DOMParser().parseFromString(await r.text(),"application/xml"),j=xml.querySelector("job");if(!j)return;
  qs("#companyName").value=j.querySelector("company")?.textContent||"";qs("#jobTitle").value=j.querySelector("title")?.textContent||"";qs("#url").value=j.querySelector("url")?.textContent||"";qs("#dateApplied").value=j.querySelector("dates")?.getAttribute("applied")||"";qs("#dateRejected").value=j.querySelector("dates")?.getAttribute("rejected")||"";qs("#status").value=j.querySelector("status")?.textContent||"Unsubmitted";
