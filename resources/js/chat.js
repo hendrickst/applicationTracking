@@ -50,7 +50,7 @@
     job = {company:xml.querySelector("job > company")?.textContent || "", title:xml.querySelector("job > title")?.textContent || "",
       url:xml.querySelector("job > url")?.textContent || "", status:xml.querySelector("job > status")?.textContent || "", notes};
     $("#chatTitle").textContent = (job.company || "Job") + (job.title ? " — " + job.title : "") + " · AI Chat";
-    $("#chatSubtitle").textContent = "A saved conversation for " + (job.company || "this application") + ". Job details are used as context; uploaded documents, contacts, and notes are not sent automatically.";
+    $("#chatSubtitle").textContent = "A saved conversation for " + (job.company || "this application") + ". Company, title, status, posting URL, and saved application notes are sent as context; uploaded documents and contact details are not sent automatically.";
   }
   async function persist() {
     const body = new URLSearchParams({record, action:"save", messages:JSON.stringify(messages)});
@@ -89,8 +89,8 @@
   function contextPrompt() {
     return "You are an assistant helping with one job application. Be practical, honest, concise, and grounded in facts the user provides. Do not invent experience or interview details. The app supplies these saved job details: company: " +
       (job.company || "not specified") + "; title: " + (job.title || "not specified") + "; status: " + (job.status || "not specified") +
-      "; job posting URL: " + (job.url || "not provided") + ". Saved application notes:\\n" + (job.notes && job.notes.length ? job.notes.join("\\n") : "No application notes saved.") +
-      "\\nThe URL is provided as a reference link only; you have not been given the webpage contents and must not claim to have opened or read the posting. If the user asks about details from the posting, ask them to paste the relevant text or upload the job description. Uploaded documents and contact details are not included. Treat notes as user-provided context, not guaranteed facts; ask when clarification is needed.";
+      "; job posting URL: " + (job.url || "not provided") + ". Saved application notes:\n" + (job.notes && job.notes.length ? job.notes.join("\n") : "No application notes saved.") +
+      "\nThe URL is provided as a reference link only; you have not been given the webpage contents and must not claim to have opened or read the posting. If the user asks about details from the posting, ask them to paste the relevant text or upload the job description. Uploaded documents and contact details are not included. Treat notes as user-provided context, not guaranteed facts; ask when clarification is needed.";
   }
   async function sendMessage(text) {
     const s = settings();
