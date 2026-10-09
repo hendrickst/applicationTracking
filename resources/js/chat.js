@@ -38,7 +38,8 @@
   async function loadJob() {
     if (!/^[A-Za-z0-9-]+$/.test(record)) throw new Error("Missing or invalid application record ID.");
     const editLink = $("#editJobLink"); if (editLink) editLink.href = "./update.html?record=" + encodeURIComponent(record);
-    const embedded = $("#embeddedChatSection"); if (embedded) embedded.hidden = false;
+    const embedded = $("#embeddedChatSection"), toggle = $("#toggleChatBtn");
+    if (embedded && toggle) { toggle.hidden = false; embedded.hidden = false; }
     const response = await fetch("./resources/xql/populate.xql?record=" + encodeURIComponent(record), {cache:"no-store"});
     if (!response.ok) throw new Error("Could not load job details.");
     const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
@@ -203,7 +204,38 @@
     });
     $("#copySummaryBtn").addEventListener("click", () => copySummary().catch(error => setStatus(error.message, true)));
     $("#clearChatBtn").addEventListener("click", () => clearChat().catch(error => setStatus(error.message, true)));
-    if (!record && $("#embeddedChatSection")) return;
+    if ($("#embeddedChatSection")) {
+      const drawer = $("#embeddedChatSection");
+      const toggle = $("#toggleChatBtn");
+      const backdrop = $("#chatBackdrop");
+      const openDrawer = () => {
+        if (!record) return;
+        document.body.classList.add("chat-open");
+        drawer.classList.add("is-open");
+        drawer.setAttribute("aria-hidden", "false");
+        toggle?.setAttribute("aria-expanded", "true");
+        if (backdrop) backdrop.hidden = false;
+        $("#userMessage")?.focus();
+      };
+      const closeDrawer = () => {
+        document.body.classList.remove("chat-open");
+        drawer.classList.remove("is-open");
+        drawer.setAttribute("aria-hidden", "true");
+        toggle?.setAttribute("aria-expanded", "false");
+        if (backdrop) backdrop.hidden = true;
+      };
+      toggle?.addEventListener("click", openDrawer);
+      $("#closeChatBtn")?.addEventListener("click", closeDrawer);
+      backdrop?.addEventListener("click", closeDrawer);
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeDrawer();
+      });
+      if (!record) {
+        if (toggle) toggle.hidden = true;
+        drawer.hidden = true;
+        return;
+      }
+    }
     try { await loadJob(); await loadMessages(); }
     catch (error) { $("#chatMessages").textContent = error.message; setStatus(error.message, true); }
   });
