@@ -87,7 +87,7 @@ return
         <select id="companyFilter" onchange="filterCompany()"><option value="">All Companies</option></select>
     </div>
     <table class="report-table" id="jobsTable">
-        <thead><tr><th>Company</th><th>Title</th><th>Status</th><th>Applied</th></tr></thead>
+        <thead><tr><th>Company</th><th>Title</th><th>Status</th><th>Applied</th><th>AI Chat</th></tr></thead>
         <tbody>{
             for $j in $apps
             let $id := string($j/@id)
@@ -98,6 +98,7 @@ return
                 <td><a class="job-link" href="./update.html?record={$id}">{$j/title/text()}</a></td>
                 <td class="status {$s}">{$s}</td>
                 <td>{$j/dates/@applied/string()}</td>
+                <td><a class="btn" href="./chat.html?record={$id}">Open Chat</a></td>
             </tr>
         }</tbody>
     </table>
