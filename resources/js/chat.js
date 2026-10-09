@@ -19,6 +19,7 @@
   function loadSettings() {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+      if (saved.model === "gemini-2.5-flash-lite") saved.model = "gemini-3.5-flash-lite";
       $("#apiKey").value = saved.apiKey || "";
       $("#model").value = saved.model || "gemini-3.5-flash-lite";
       $("#temperature").value = String(saved.temperature ?? 0.4);
@@ -92,13 +93,13 @@
     messages.push({role:"user", text, time:localDate()});
     renderMessages();
     await persist();
-    const history = messages.slice(-24).map(m => (m.role === "model" ? "Assistant" : "User") + ": " + m.text).join("\\n\\n");
+    const history = messages.slice(-24).map(m => (m.role === "model" ? "Assistant" : "User") + ": " + m.text).join("\n\n");
     const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
       method:"POST",
       headers:{"Content-Type":"application/json", "x-goog-api-key":s.apiKey},
       body:JSON.stringify({
         model:s.model,
-        system_instruction:contextPrompt() + "\\n\\nUse the conversation transcript to maintain continuity. Respond to the latest user message.",
+        system_instruction:contextPrompt() + "\n\nUse the conversation transcript to maintain continuity. Respond to the latest user message.",
         input:history,
         store:false,
         generation_config:{temperature:s.temperature, max_output_tokens:2048}
