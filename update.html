@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Job Application Entry</title><link rel="stylesheet" href="./resources/css/styles.css"/></head>
-<body><div class="container"><h1>Add / Edit Job Application</h1><p class="sub">Track the position, contacts, documents, and notes in one place.</p>
+<body><div class="container"><div class="section-header"><div><h1>Add / Edit Job Application</h1><p class="sub">Track the position, contacts, documents, and notes in one place.</p></div><button id="toggleChatBtn" class="btn primary" type="button" aria-expanded="false" aria-controls="embeddedChatSection" hidden>Open AI Chat</button></div>
 <form id="jobForm" action="./resources/xql/update.xql" method="post" enctype="multipart/form-data">
 <input id="record" name="record" type="hidden"/><input id="contactCount" name="contactCount" type="hidden" value="0"/><input id="noteCount" name="noteCount" type="hidden" value="0"/><input id="documentCount" name="documentCount" type="hidden" value="0"/>
 <div class="grid">
@@ -18,4 +18,17 @@
 <hr/>
 <div class="section-header"><div><h2>Notes</h2><p class="sub sub-tight">Track calls, interviews, follow-ups, and other updates.</p></div><button class="btn" type="button" id="addNoteBtn">+ Add Note</button></div><div id="notesContainer"></div>
 <div class="footer"><div><button class="btn danger" type="button" id="deleteBtn" hidden>Delete Application</button></div><div><button class="btn" type="button" id="cancelBtn">Cancel</button><button class="btn primary" type="submit" id="saveBtn">Save</button></div>
-</div></div></form></div><script src="./resources/js/entry.js"></script><script src="./resources/js/delete.js"></script></body></html>
+</div></div></form></div>
+<div id="chatBackdrop" class="chat-backdrop" hidden></div>
+<aside id="embeddedChatSection" class="chat-drawer" aria-label="AI Chat" aria-hidden="true" hidden>
+  <div class="chat-drawer-header"><div><h2 id="chatTitle">AI Chat</h2><p id="chatSubtitle" class="sub sub-tight">Ask questions about this application, recruiter conversations, interview preparation, or next steps.</p></div><button id="closeChatBtn" class="btn chat-close" type="button" aria-label="Close AI chat">✕</button></div>
+  <details id="chatSettingsSection" class="card chat-settings-section"><summary>Gemini API Settings</summary><div class="chat-settings">
+    <div class="field"><label for="apiKey">Gemini API key</label><input id="apiKey" type="password" autocomplete="off" placeholder="Paste your Google AI Studio API key"/></div>
+    <div class="grid chat-settings-grid"><div class="field"><label for="model">Model</label><input id="model" value="gemini-3.5-flash-lite"/></div><div class="field"><label for="temperature">Creativity (0–1)</label><input id="temperature" type="number" min="0" max="1" step="0.1" value="0.4"/></div></div>
+    <div class="chat-settings-actions"><button id="saveSettingsBtn" type="button" class="btn">Save settings in this browser</button><span id="settingsStatus" class="muted">Your API key is stored in this browser only, not in eXist-db.</span></div>
+  </div></details>
+  <div id="chatMessages" class="chat-messages" aria-live="polite"><div class="chat-empty">Loading conversation…</div></div>
+  <div class="chat-composer"><label for="userMessage">Message</label><textarea id="userMessage" rows="3" placeholder="Ask about interview preparation, recruiter follow-up, salary discussion, or next steps."></textarea><div class="chat-composer-footer"><span id="chatStatus" class="muted">Conversation saves to this job's record.</span><button id="sendBtn" class="btn primary" type="button">Send</button></div></div>
+  <div class="chat-footer-actions"><button id="copySummaryBtn" class="btn" type="button">Copy conversation summary</button><button id="clearChatBtn" class="btn danger" type="button">Clear conversation</button></div>
+</aside>
+<script src="./resources/js/entry.js"></script><script src="./resources/js/delete.js"></script><script src="./resources/js/chat.js"></script></body></html>
