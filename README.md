@@ -22,11 +22,11 @@ Each application has a separate AI chat at `chat.html?record=<application-id>`. 
 ### Setup
 
 1. Create an API key in [Google AI Studio](https://aistudio.google.com/).
-2. Open an application's **Open Chat** link and paste the key into the Gemini settings.
+2. Open an application, then click **Open AI Chat** on its edit page and paste the key into the Gemini settings.
 3. Confirm the privacy notice and save settings. The key is stored in this browser's local storage, not in eXist-db or the Git repository.
 4. Send a message. Chat history is saved to eXist-db after each message and response.
 
-The initial model is `gemini-2.5-flash-lite`. If Google no longer offers it, change the model field to a currently available model in chat settings.
+The initial model is `gemini-3.5-flash-lite`. The chat uses Google's recommended Interactions API and sends `store:false`; the app keeps its own transcript in eXist-db. If Google no longer offers this model, change the model field to a currently available model in chat settings.
 
 ### Security and privacy notes
 
