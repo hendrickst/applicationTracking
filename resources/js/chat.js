@@ -68,6 +68,54 @@
     }));
     renderMessages();
   }
+  function appendInline(parent, text) {
+    const pattern = /(\*\*[^*]+\*\*|__[^_]+__|\*[^*\n]+\*|_[^_\n]+_|\x60[^\x60]+\x60)/g;
+    let last = 0, match;
+    while ((match = pattern.exec(text)) !== null) {
+      if (match.index > last) parent.appendChild(document.createTextNode(text.slice(last, match.index)));
+      const token = match[0];
+      let node;
+      if (token.startsWith("**") || token.startsWith("__")) {
+        node = document.createElement("strong"); node.textContent = token.slice(2, -2);
+      } else if (token.charCodeAt(0) === 96) {
+        node = document.createElement("code"); node.textContent = token.slice(1, -1);
+      } else {
+        node = document.createElement("em"); node.textContent = token.slice(1, -1);
+      }
+      parent.appendChild(node);
+      last = match.index + token.length;
+    }
+    if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+  }
+  function renderMarkdown(parent, value) {
+    const lines = String(value ?? "").replace(/\r\n?/g, "\n").split("\n");
+    let paragraph = [], list = null, listType = "";
+    const closeList = () => { list = null; listType = ""; };
+    const flushParagraph = () => {
+      if (!paragraph.length) return;
+      const p = document.createElement("p");
+      paragraph.forEach((line, index) => { if (index) p.appendChild(document.createElement("br")); appendInline(p, line); });
+      parent.appendChild(p); paragraph = [];
+    };
+    for (const line of lines) {
+      const heading = line.match(/^\s{0,3}(#{1,4})\s+(.+)$/);
+      const bullet = line.match(/^\s*[-*+]\s+(.+)$/);
+      const numbered = line.match(/^\s*\d+[.)]\s+(.+)$/);
+      if (!line.trim()) { flushParagraph(); closeList(); continue; }
+      if (heading) {
+        flushParagraph(); closeList();
+        const h = document.createElement("h" + heading[1].length); appendInline(h, heading[2]); parent.appendChild(h); continue;
+      }
+      if (bullet || numbered) {
+        flushParagraph();
+        const type = bullet ? "ul" : "ol";
+        if (!list || listType !== type) { closeList(); list = document.createElement(type); listType = type; parent.appendChild(list); }
+        const li = document.createElement("li"); appendInline(li, (bullet || numbered)[1]); list.appendChild(li); continue;
+      }
+      closeList(); paragraph.push(line);
+    }
+    flushParagraph();
+  }
   function renderMessages() {
     const host = $("#chatMessages");
     host.innerHTML = "";
@@ -79,7 +127,9 @@
       const item = document.createElement("article");
       item.className = "chat-message " + (message.role === "model" ? "assistant-message" : "user-message");
       const heading = document.createElement("div"); heading.className = "chat-message-role"; heading.textContent = message.role === "model" ? "Gemini" : "You";
-      const body = document.createElement("div"); body.className = "chat-message-text"; body.textContent = message.text;
+      const body = document.createElement("div"); body.className = "chat-message-text";
+      if (message.role === "model") renderMarkdown(body, message.text);
+      else body.textContent = message.text;
       const time = document.createElement("div"); time.className = "chat-message-time";
       if (message.time && !Number.isNaN(Date.parse(message.time))) time.textContent = new Date(message.time).toLocaleString();
       item.append(heading, body, time); host.appendChild(item);
