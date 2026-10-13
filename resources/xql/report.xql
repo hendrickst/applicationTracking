@@ -79,7 +79,7 @@ return
     <div class="summary-grid">
         <div class="summary-card"><div class="summary-number">{$total}</div><div class="summary-label">Total</div></div>
         <div class="summary-card"><div class="summary-number">{$submitted}</div><div class="summary-label">Submitted</div></div>
-        <div class="summary-card"><div class="summary-number">{$interview}</div><div class="summary-label">Interview</div></div>
+        <button type="button" class="summary-card summary-card-button" id="interviewFilterToggle" aria-pressed="false" onclick="toggleInterviewFilter()"><div class="summary-number">{$interview}</div><div class="summary-label">Interview · click to filter</div></button>
         <div class="summary-card"><div class="summary-number">{$rejected}</div><div class="summary-label">Rejected</div></div>
     </div>
     <div class="filter-bar">
