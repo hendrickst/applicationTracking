@@ -64,3 +64,7 @@ body.chat-open>.container .document-row{grid-template-columns:1fr}
 
 /* Keep the edit-page AI Chat toggle readable against the light section-header button background. */
 #toggleChatBtn{color:#5b21b6}
+
+
+/* Clickable Interview summary filter */
+.summary-card-button{font:inherit;color:inherit;width:100%;cursor:pointer;text-align:center;transition:border-color .15s,box-shadow .15s}.summary-card-button:hover,.summary-card-button:focus-visible{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12);outline:none}.summary-card-button[aria-pressed="true"]{border-color:#16a34a;background:#f0fdf4}.summary-card-button .summary-label{font:inherit;font-size:12px;text-transform:uppercase;color:#666;margin-top:6px}
