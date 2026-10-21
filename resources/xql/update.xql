@@ -43,9 +43,11 @@ declare function local:docs($f as node()) {
  let $deleted:=if($count > 0) then for $i in 0 to ($count - 1) return request:get-parameter("documentDelete["||$i||"]","") else ()
  let $_:=for $name in $deleted where $name and $name = xmldb:get-child-resources(local:col()) return xmldb:remove(local:col(),$name)
  let $keep:=for $doc at $pos in $existing
-   let $custom:=normalize-space(local:param("documentCustomName["||($pos - 1)||"]"))
+   let $index:=xs:string($pos - 1)
+   let $custom:=normalize-space(local:param("documentCustomName["||$index||"]"))
+   let $type:=normalize-space(local:param("documentType["||$index||"]"))
    where not($doc/@storedName=$deleted)
-   return element document {$doc/@*[local-name() ne "customName"], attribute customName {if($custom ne "") then $custom else string($doc/@originalName)}, $doc/node()}
+   return element document {$doc/@*[not(local-name()=("customName","type"))], attribute type {if($type ne "") then $type else string($doc/@type)}, attribute customName {if($custom ne "") then $custom else string($doc/@originalName)}, $doc/node()}
  let $new:=if($count > 0) then for $i in 0 to ($count - 1) return local:upload(xs:string($i),local:param("documentType["||$i||"]"),local:param("documentCustomName["||$i||"]")) else ()
  let $x:=<documents>{$keep,$new}</documents>
  return if(exists($f//documents)) then update replace $f//documents with $x else update insert $x into $f/job
