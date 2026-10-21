@@ -82,3 +82,6 @@ body.chat-open>.container .document-row{grid-template-columns:1fr}
 .document-row.new-document{grid-template-columns:minmax(130px,.8fr) minmax(180px,1fr) minmax(180px,1.4fr) auto}
 .document-custom-name{min-width:0}
 @media(max-width:720px){.document-row.existing-document,.document-row.new-document{grid-template-columns:1fr}}
+
+/* Keep original attachment filenames outside the editable-field grid. */
+.original-file-name{margin:6px 0 0 4px;overflow-wrap:anywhere;font-size:12px}
