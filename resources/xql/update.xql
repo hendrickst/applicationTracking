@@ -43,7 +43,8 @@ declare function local:docs($f as node()) {
  let $deleted:=if($count > 0) then for $i in 0 to ($count - 1) return request:get-parameter("documentDelete["||$i||"]","") else ()
  let $_:=for $name in $deleted where $name and $name = xmldb:get-child-resources(local:col()) return xmldb:remove(local:col(),$name)
  let $keep:=for $doc at $pos in $existing
-   let $index:=xs:string($pos - 1)
+   let $matchedIndex:=(for $i in 0 to ($count - 1) where local:param("documentStoredName["||$i||"]") = string($doc/@storedName) return $i)[1]
+   let $index:=if(exists($matchedIndex)) then xs:string($matchedIndex) else xs:string($pos - 1)
    let $custom:=normalize-space(local:param("documentCustomName["||$index||"]"))
    let $type:=normalize-space(local:param("documentType["||$index||"]"))
    where not($doc/@storedName=$deleted)
