@@ -8,7 +8,7 @@ declare function local:col() as xs:string {$tsh:base||"/"||$id};
 declare function local:param($n as xs:string) as xs:string {request:get-parameter($n,"")};
 declare function local:ext($n as xs:string) as xs:string {let $e:=lower-case(tokenize($n,"\.")[last()]) return if($e=("pdf","doc","docx")) then $e else ""};
 
-declare function local:upload($i as xs:string,$type as xs:string) as element()? {
+declare function local:upload($i as xs:string,$type as xs:string,$customName as xs:string) as element()? {
  let $p:="documentFile["||$i||"]"
  let $n:=request:get-uploaded-file-name($p)
  let $d:=request:get-uploaded-file-data($p)
@@ -19,7 +19,7 @@ declare function local:upload($i as xs:string,$type as xs:string) as element()? 
    let $path:=xmldb:store-as-binary(local:col(),$s,$d)
    let $mime:=if($e="pdf") then "application/pdf" else if($e="doc") then "application/msword" else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
    let $_:=xmldb:set-mime-type($path,$mime)
-   return <document type="{$type}" originalName="{$n}" storedName="{$s}" mimeType="{$mime}"/>
+   return <document type="{$type}" originalName="{$n}" customName="{if(normalize-space($customName) ne '') then normalize-space($customName) else $n}" storedName="{$s}" mimeType="{$mime}"/>
  else ()
 };
 
@@ -42,8 +42,11 @@ declare function local:docs($f as node()) {
  let $existing:=$f//documents/document
  let $deleted:=if($count > 0) then for $i in 0 to ($count - 1) return request:get-parameter("documentDelete["||$i||"]","") else ()
  let $_:=for $name in $deleted where $name and $name = xmldb:get-child-resources(local:col()) return xmldb:remove(local:col(),$name)
- let $keep:=$existing[not(@storedName=$deleted)]
- let $new:=if($count > 0) then for $i in 0 to ($count - 1) return local:upload(xs:string($i),local:param("documentType["||$i||"]")) else ()
+ let $keep:=for $doc at $pos in $existing
+   let $custom:=normalize-space(local:param("documentCustomName["||($pos - 1)||"]"))
+   where not($doc/@storedName=$deleted)
+   return element document {$doc/@*[local-name() ne "customName"], attribute customName {if($custom ne "") then $custom else string($doc/@originalName)}, $doc/node()}
+ let $new:=if($count > 0) then for $i in 0 to ($count - 1) return local:upload(xs:string($i),local:param("documentType["||$i||"]"),local:param("documentCustomName["||$i||"]")) else ()
  let $x:=<documents>{$keep,$new}</documents>
  return if(exists($f//documents)) then update replace $f//documents with $x else update insert $x into $f/job
 };
