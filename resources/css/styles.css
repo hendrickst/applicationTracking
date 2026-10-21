@@ -68,3 +68,17 @@ body.chat-open>.container .document-row{grid-template-columns:1fr}
 
 /* Clickable Interview summary filter */
 .summary-card-button{font:inherit;color:inherit;width:100%;cursor:pointer;text-align:center;transition:border-color .15s,box-shadow .15s}.summary-card-button:hover,.summary-card-button:focus-visible{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12);outline:none}.summary-card-button[aria-pressed="true"]{border-color:#16a34a;background:#f0fdf4}.summary-card-button .summary-label{font:inherit;font-size:12px;text-transform:uppercase;color:#666;margin-top:6px}
+
+/* Rich-text notes editor */
+.rich-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.rich-toolbar .btn{padding:6px 10px;font-size:13px;min-width:36px}
+.rich-editor{min-height:130px;padding:10px 12px;border:1px solid #d8d8e2;border-radius:10px;outline:none;overflow-wrap:anywhere;background:#fff}
+.rich-editor:focus{border-color:#7c3aed;box-shadow:0 0 0 4px rgba(124,58,237,.15)}
+.rich-editor ul,.rich-editor ol{padding-left:24px}
+.rich-editor p{margin:0 0 8px}
+.rich-editor[hidden],.note-source[hidden]{display:none}
+.note-source{min-height:130px}
+.document-row.existing-document{grid-template-columns:minmax(160px,1fr) minmax(120px,1fr) auto auto}
+.document-row.new-document{grid-template-columns:minmax(130px,.8fr) minmax(180px,1fr) minmax(180px,1.4fr) auto}
+.document-custom-name{min-width:0}
+@media(max-width:720px){.document-row.existing-document,.document-row.new-document{grid-template-columns:1fr}}
