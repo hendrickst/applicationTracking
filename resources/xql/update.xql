@@ -40,19 +40,39 @@ declare function local:notes($f as node()) {
 declare function local:docs($f as node()) {
  let $count:=xs:integer(request:get-parameter("documentCount","0"))
  let $existing:=$f//documents/document
- let $deleted:=if($count > 0) then for $i in 0 to ($count - 1) return request:get-parameter("documentDelete["||$i||"]","") else ()
- let $_:=for $name in $deleted where $name and $name = xmldb:get-child-resources(local:col()) return xmldb:remove(local:col(),$name)
- let $keep:=for $doc at $pos in $existing
-   let $index:=xs:string($pos - 1)
-   let $custom:=normalize-space(local:param("documentCustomName["||$index||"]"))
-   let $type:=normalize-space(local:param("documentType["||$index||"]"))
-   where not($doc/@storedName=$deleted)
-   return element document {$doc/@*[not(local-name()=("customName","type"))], attribute type {if($type ne "") then $type else string($doc/@type)}, attribute customName {if($custom ne "") then $custom else string($doc/@originalName)}, $doc/node()}
- let $new:=if($count > 0) then for $i in 0 to ($count - 1) return local:upload(xs:string($i),local:param("documentType["||$i||"]"),local:param("documentCustomName["||$i||"]")) else ()
+ (: Only treat a non-empty, explicitly submitted stored filename as a deletion.
+    Unchecked checkboxes are omitted from multipart forms; empty defaults must
+    never participate in attachment deletion comparisons. :)
+ let $deleted:=if($count > 0) then
+   for $i in 0 to ($count - 1)
+   let $name:=normalize-space(local:param("documentDelete["||$i||"]"))
+   where $name ne ""
+   return $name
+ else ()
+ let $_:=for $name in $deleted
+   where $name = xmldb:get-child-resources(local:col())
+   return xmldb:remove(local:col(),$name)
+ let $keep:=for $doc in $existing
+   let $stored:=string($doc/@storedName)
+   let $matchedIndex:=(for $i in 0 to ($count - 1)
+     where local:param("documentStoredName["||$i||"]") = $stored
+     return $i)[1]
+   let $custom:=if(exists($matchedIndex)) then normalize-space(local:param("documentCustomName["||$matchedIndex||"]")) else ""
+   let $type:=if(exists($matchedIndex)) then normalize-space(local:param("documentType["||$matchedIndex||"]")) else ""
+   where not($stored = $deleted)
+   return element document {
+     $doc/@*[not(local-name()=("customName","type"))],
+     attribute type {if($type ne "") then $type else string($doc/@type)},
+     attribute customName {if($custom ne "") then $custom else string($doc/@customName)},
+     $doc/node()
+   }
+ let $new:=if($count > 0) then
+   for $i in 0 to ($count - 1)
+   return local:upload(xs:string($i),local:param("documentType["||$i||"]"),local:param("documentCustomName["||$i||"]"))
+ else ()
  let $x:=<documents>{$keep,$new}</documents>
  return if(exists($f//documents)) then update replace $f//documents with $x else update insert $x into $f/job
 };
-
 declare function local:run() {
  let $c:=local:col()
  let $new:=not(xmldb:collection-available($c))
