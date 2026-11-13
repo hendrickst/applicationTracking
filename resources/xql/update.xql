@@ -6,7 +6,7 @@ declare variable $record := request:get-parameter("record","");
 declare variable $id := if($record) then $record else util:uuid();
 declare function local:col() as xs:string {$tsh:base||"/"||$id};
 declare function local:param($n as xs:string) as xs:string {request:get-parameter($n,"")};
-declare function local:ext($n as xs:string) as xs:string {let $e:=lower-case(tokenize($n,"\\.")[last()]) return if($e=("pdf","doc","docx")) then $e else ""};
+declare function local:ext($n as xs:string) as xs:string {let $e:=lower-case(tokenize($n,"\.")[last()]) return if($e=("pdf","doc","docx")) then $e else ""};
 
 declare function local:upload($i as xs:string,$type as xs:string,$customName as xs:string) as element()? {
  let $p:="documentFile["||$i||"]"
