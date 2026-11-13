@@ -10,8 +10,12 @@ declare function local:ext($n as xs:string) as xs:string {let $e:=lower-case(tok
 
 declare function local:upload($i as xs:string,$type as xs:string,$customName as xs:string) as element()? {
  let $p:="documentFile["||$i||"]"
- let $n:=request:get-uploaded-file-name($p)
- let $d:=request:get-uploaded-file-data($p)
+ (: A save request may legitimately contain no multipart file fields. In eXist-db
+    6.4, querying an absent upload parameter can throw a NullPointerException. :)
+ let $n:=try { request:get-uploaded-file-name($p) } catch * { "" }
+ let $d:=if(normalize-space($n) ne "") then
+   (try { request:get-uploaded-file-data($p) } catch * { () })
+ else ()
  let $e:=if (exists($n) and string-length($n) gt 0) then local:ext($n) else ""
  return if($n and exists($d) and string-length($e) gt 0) then
    let $safeType:=replace(lower-case(normalize-space($type)),"[^a-z0-9]+","-")
